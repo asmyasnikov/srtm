@@ -104,9 +104,19 @@ func avg (v1, v2, f float64) float64 {
 	return v1 + (v2 - v1) * f
 }
 
+func (t *Tile) normalize(v int) int {
+	if v < 0 {
+		return 0
+	}
+	if v > (t.size-1) {
+		return t.size-1
+	}
+	return v
+}
+
 func (t *Tile) rowCol(row, col int) float64 {
 	fmt.Println("rowCol:", t.size * row + col, row, col, t.size)
-	return float64(t.elevations[t.size * row + col])
+	return float64(t.elevations[t.size * t.normalize(row) + t.normalize(col)])
 }
 
 func (t *Tile) interpolate(row, col float64) float64 {
