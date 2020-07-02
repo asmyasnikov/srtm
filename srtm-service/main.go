@@ -61,6 +61,7 @@ func handleAddElevations(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't read body", http.StatusInternalServerError)
 		return
 	}
+	fmt.Println(string(body))
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }

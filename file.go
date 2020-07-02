@@ -58,7 +58,7 @@ func Read(fname string, bytes []byte) (sw *LatLng, squareSize int, elevations []
 		return sw, squareSize, elevations, fmt.Errorf("hgt file cannot identified (only 1 arcsecond and 3 arcsecond supported, file size = %d)", len(bytes))
 	}
 
-	sw, err = GetFileCorner(fname)
+	sw, err = southWest(fname)
 	if err != nil {
 		return sw, squareSize, elevations, errors.Wrap(err, "could not get corner coordinates from file name")
 	}
@@ -77,9 +77,9 @@ func Read(fname string, bytes []byte) (sw *LatLng, squareSize int, elevations []
 	return sw, squareSize, elevations, nil
 }
 
-// GetFileCorner returns the southwest point contained in a HGT file.
+// sw returns the southwest point contained in a HGT file.
 // Coordinates in the file are relative to this point
-func GetFileCorner(file string) (p *LatLng, err error) {
+func southWest(file string) (p *LatLng, err error) {
 	fnameParts := srtmParseName.FindStringSubmatch(file)
 	if fnameParts == nil {
 		return p, ErrInvalidHGTFileName

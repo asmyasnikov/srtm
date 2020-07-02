@@ -105,7 +105,8 @@ func avg (v1, v2, f float64) float64 {
 }
 
 func (t *Tile) rowCol(row, col int) float64 {
-	return float64(t.elevations[int(t.size * row + col)])
+	fmt.Println("rowCol:", t.size * row + col, row, col, t.size)
+	return float64(t.elevations[t.size * row + col])
 }
 
 func (t *Tile) interpolate(row, col float64) float64 {
