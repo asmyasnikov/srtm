@@ -26,14 +26,15 @@ func lruCacheSize() int {
 
 
 func init() {
-	c, err := lru.NewWithEvict(lruCacheSize(), func(key interface{}, value interface{}) {
+	s := lruCacheSize()
+	fmt.Println("LRU cache size", s)
+	c, err := lru.NewWithEvict(s, func(key interface{}, value interface{}) {
 		// if cast value to *Tile failed - panic - it's ok
 		value.(*Tile).destroy()
 	})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("LRU cache size", c.Len())
 	cache = c
 }
 
