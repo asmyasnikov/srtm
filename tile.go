@@ -28,10 +28,7 @@ func lruCacheSize() int {
 func init() {
 	s := lruCacheSize()
 	fmt.Println("LRU cache size", s)
-	c, err := lru.NewWithEvict(s, func(key interface{}, value interface{}) {
-		// if cast value to *Tile failed - panic - it's ok
-		value.(*Tile).destroy()
-	})
+	c, err := lru.New(s)
 	if err != nil {
 		panic(err)
 	}
@@ -102,9 +99,6 @@ type Tile struct {
 	sw *LatLng
 	size int
 	elevations []int16
-}
-
-func (t *Tile) destroy() {
 }
 
 func (t *Tile) getElevation(ll LatLng) (float64, error) {
