@@ -28,7 +28,9 @@ func lruCacheSize() int {
 func init() {
 	s := lruCacheSize()
 	fmt.Println("LRU cache size", s)
-	c, err := lru.New(s)
+	c, err := lru.NewWithEvict(s, func(key interface{}, value interface{}) {
+		fmt.Printf("remove tile '%s' from cache\n", key.(string))
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -91,7 +93,9 @@ func loadTile(tileDir string, ll LatLng) (*Tile, error) {
 		size: size,
 		elevations: elevations,
 	}
-	_ = cache.Add(key, t)
+	if evicted := cache.Add(key, t); evicted {
+		fmt.Printf("add tile '%s' to cache with evict oldest\n", key)
+	}
 	return t.(*Tile), nil
 }
 
