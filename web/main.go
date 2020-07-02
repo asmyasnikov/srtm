@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	srtm ".."
+	srtm "github.com/asmyasnikov/srtm"
 )
 
 var TILE_DIRECTORY = tileDirectory()
