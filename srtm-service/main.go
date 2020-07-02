@@ -51,7 +51,7 @@ func handleAddElevations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	geoJson, err := geojson.UnmarshalGeometry(body)
-	geoJson, err = srtm.AddElevations(TILE_DIRECTORY, geoJson, false)
+	geoJson, err = srtm.AddElevations(TILE_DIRECTORY, geoJson, true)
 	if err != nil {
 		http.Error(w, "can't read body", http.StatusInternalServerError)
 		return

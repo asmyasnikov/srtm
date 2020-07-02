@@ -68,7 +68,7 @@ func Read(fname string, bytes []byte) (sw *LatLng, squareSize int, elevations []
 	// Latitude
 	for row := 0; row < squareSize; row++ {
 		// Longitude
-		for col := 0; col < squareSize; col++ {
+		for col := 0; col <= squareSize; col++ {
 			idx := row * squareSize + col
 			elevations[idx] = int16(binary.BigEndian.Uint16(bytes[idx*2:idx*2+2]))
 		}
