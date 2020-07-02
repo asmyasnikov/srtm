@@ -33,6 +33,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("LRU cache size", c.Len())
 	cache = c
 }
 
@@ -130,8 +131,8 @@ func (t *Tile) normalize(v int, description string) int {
 	return v
 }
 
-func (t *Tile) rowCol(row, col int) float64 {
-	return float64(t.elevations[t.size * t.normalize(row, "row") + t.normalize(col, "col")])
+func (t *Tile) rowCol(row, col int, description string) float64 {
+	return float64(t.elevations[t.size * t.normalize(row, "row " + description) + t.normalize(col, "col " + description)])
 }
 
 func (t *Tile) interpolate(row, col float64) float64 {
@@ -151,10 +152,10 @@ func (t *Tile) interpolate(row, col float64) float64 {
 		return 1
 	}()
 	colFrac := col - float64(colLow)
-	v00 := t.rowCol(rowLow, colLow)
-	v10 := t.rowCol(rowLow, colHi)
-	v11 := t.rowCol(rowHi, colHi)
-	v01 := t.rowCol(rowHi, colLow)
+	v00 := t.rowCol(rowLow, colLow, "v00")
+	v10 := t.rowCol(rowLow, colHi, "v10")
+	v11 := t.rowCol(rowHi, colHi, "v11")
+	v01 := t.rowCol(rowHi, colLow, "v01")
 	v1 := avg(v00, v10, colFrac)
 	v2 := avg(v01, v11, colFrac)
 	return avg(v1, v2, rowFrac)
