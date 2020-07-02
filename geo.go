@@ -1,6 +1,7 @@
 package srtm
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 
@@ -15,11 +16,14 @@ var latitudeDD = regexp.MustCompile(`N|S`)
 // unparsable or otherwise invalid
 var ErrInvalidCoordDegrees = errors.New("invalid lat/lon degrees")
 
-// Point represents a location with height in meters
-type Point struct {
+// LatLng represents a location
+type LatLng struct {
 	Latitude  float64
 	Longitude float64
-	Elevation int16 // Elevation in meters
+}
+
+func (ll *LatLng) String() string {
+	return fmt.Sprintf("[%0.7f, %0.7f]", ll.Latitude, ll.Longitude)
 }
 
 // dToDecimal accepts a direction-signed coordinate value (e.g. W|E or N|S prefix)
@@ -48,7 +52,7 @@ func dToDecimal(d string) (dd float64, err error) {
 	}
 
 	if i < 0 {
-		return dd, errors.Wrapf(ErrInvalidCoordDegrees, "negative coord %f should is not valid in combination with direction,")
+		return dd, errors.Wrapf(ErrInvalidCoordDegrees, "negative coord %f should is not valid in combination with direction,", dd)
 	}
 
 	if latitudeDD.MatchString(dir) {
