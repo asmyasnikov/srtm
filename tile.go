@@ -133,7 +133,7 @@ func (t *Tile) normalize(v int, description string) int {
 }
 
 func (t *Tile) rowCol(row, col int, description string) float64 {
-	return float64(t.elevations[t.size * t.normalize(row, "row " + description) + t.normalize(col, "col " + description)])
+	return float64(t.elevations[(t.size - t.normalize(row, "row " + description) - 1) * t.size + t.normalize(col, "col " + description)])
 }
 
 func (t *Tile) interpolate(row, col float64) float64 {
