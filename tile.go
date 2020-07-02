@@ -6,13 +6,27 @@ import (
 	"math"
 	"os"
 	"path"
+	"strconv"
 )
 
 // LRU cache of hgt files
 var cache *lru.Cache
 
+func lruCacheSize() int {
+	v := os.Getenv("LRU_CACHE_SIZE")
+	if len(v) == 0 {
+		return 1000
+	}
+	s, err := strconv.Atoi(v)
+	if err != nil {
+		return 1000
+	}
+	return s
+}
+
+
 func init() {
-	c, err := lru.NewWithEvict(1000, func(key interface{}, value interface{}) {
+	c, err := lru.NewWithEvict(lruCacheSize(), func(key interface{}, value interface{}) {
 		// if cast value to *Tile failed - panic - it's ok
 		value.(*Tile).destroy()
 	})
@@ -106,11 +120,11 @@ func avg (v1, v2, f float64) float64 {
 
 func (t *Tile) normalize(v int, description string) int {
 	if v < 0 {
-		fmt.Println("normalize: error value %d of %s", v, description)
+		fmt.Printf("normalize: error value %d of %s\n", v, description)
 		return 0
 	}
 	if v > (t.size-1) {
-		fmt.Println("normalize: error value %d of %s", v, description)
+		fmt.Printf("normalize: error value %d of %s\n", v, description)
 		return t.size-1
 	}
 	return v
