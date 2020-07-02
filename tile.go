@@ -120,20 +120,20 @@ func avg (v1, v2, f float64) float64 {
 	return v1 + (v2 - v1) * f
 }
 
-func (t *Tile) normalize(v int, description string) int {
+func (t *Tile) normalize(v, max int, description string) int {
 	if v < 0 {
 		fmt.Printf("normalize: error value %d of %s\n", v, description)
 		return 0
 	}
-	if v > (t.size-1) {
+	if v > max {
 		fmt.Printf("normalize: error value %d of %s\n", v, description)
-		return t.size-1
+		return max
 	}
 	return v
 }
 
 func (t *Tile) rowCol(row, col int, description string) float64 {
-	return float64(t.elevations[(t.size - t.normalize(row, "row " + description) - 1) * t.size + t.normalize(col, "col " + description)])
+	return float64(t.elevations[(t.size - t.normalize(row, (t.size-1), "row " + description) - 1) * t.size + t.normalize(col, t.size, "col " + description)])
 }
 
 func (t *Tile) interpolate(row, col float64) float64 {
