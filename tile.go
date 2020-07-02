@@ -111,10 +111,20 @@ func (t *Tile) rowCol(row, col int) float64 {
 
 func (t *Tile) interpolate(row, col float64) float64 {
 	rowLow := int(math.Floor(row))
-	rowHi := rowLow + 1
+	rowHi := rowLow + func() int {
+		if rowLow == t.size {
+			return 0
+		}
+		return 1
+	}()
 	rowFrac := row - float64(rowLow)
 	colLow := int(math.Floor(col))
-	colHi := colLow + 1
+	colHi := colLow + func() int {
+		if colLow == t.size {
+			return 0
+		}
+		return 1
+	}()
 	colFrac := col - float64(colLow)
 	v00 := t.rowCol(rowLow, colLow)
 	v10 := t.rowCol(rowLow, colHi)
