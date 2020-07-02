@@ -104,7 +104,7 @@ type Tile struct {
 func (t *Tile) getElevation(ll LatLng) (float64, error) {
 	row := (ll.Latitude - t.sw.Latitude) * float64(t.size)
 	col := (ll.Longitude - t.sw.Longitude) * float64(t.size)
-	if row < 0 || col < 0 || row > float64(t.size) || col > float64(t.size) {
+	if row < 0 || col < 0 || row > float64(t.size-1) || col > float64(t.size-1) {
 		return 0, fmt.Errorf("lat/lng is outside tile bounds (row=%f, col=%f, size=%d)", row, col, t.size)
 	}
 	return t.interpolate(row, col), nil
