@@ -113,7 +113,8 @@ func download(tileDir, key string, ll LatLng) (string, error) {
 			}
 			outputFile.Close()
 			if err == nil {
-				hgt := strings.ReplaceAll(extractedFilePath, targetDir, tileDir)
+				_, file := path.Split(extractedFilePath)
+				hgt := path.Join(tileDir, file)
 				extracted = append(extracted, hgt)
 				if err := os.Rename(extractedFilePath, hgt); err != nil {
 					fmt.Println("move: ", err)
