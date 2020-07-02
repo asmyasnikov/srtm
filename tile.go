@@ -62,7 +62,7 @@ var suffixes = []string {
 	".gz",
 }
 
-func tilePath(tileDir string, key string) (string, error) {
+func tilePath(tileDir string, key string, ll LatLng) (string, error) {
 	tilePath := path.Join(tileDir, key)
 	for _, s := range suffixes {
 		tilePath = tilePath + s
@@ -71,7 +71,7 @@ func tilePath(tileDir string, key string) (string, error) {
 			return tilePath, nil
 		}
 	}
-	return "", fmt.Errorf("tile file for key = %s is not exists", key)
+	return download(tileDir, key, ll)
 }
 
 func loadTile(tileDir string, ll LatLng) (*Tile, error) {
@@ -80,7 +80,7 @@ func loadTile(tileDir string, ll LatLng) (*Tile, error) {
 	if ok {
 		return t.(*Tile), nil
 	}
-	tPath, err := tilePath(tileDir, key)
+	tPath, err := tilePath(tileDir, key, ll)
 	if err != nil {
 		return nil, err
 	}
