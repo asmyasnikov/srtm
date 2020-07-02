@@ -106,9 +106,11 @@ func avg (v1, v2, f float64) float64 {
 
 func (t *Tile) normalize(v int) int {
 	if v < 0 {
+		fmt.Println("normalize: error value %d", v)
 		return 0
 	}
 	if v > (t.size-1) {
+		fmt.Println("normalize: error value %d", v)
 		return t.size-1
 	}
 	return v
