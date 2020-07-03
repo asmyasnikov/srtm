@@ -20,7 +20,7 @@ func addElevation(tileDir string, point []float64) ([]float64, error) {
 		fmt.Printf("getElevation: latLng = %s -> error %s\n", ll.String(), err.Error())
 		return nil, err
 	}
-	return append(point, float64(elevation)), nil
+	return append(point[:2], float64(elevation)), nil
 }
 
 func AddElevations(tileDir string, geoJson *geojson.Geometry, skipErrors bool) (*geojson.Geometry, error) {
