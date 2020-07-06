@@ -11,7 +11,9 @@ import (
 	"strconv"
 )
 
+// TILE_DIRECTORY is a directory of hgt-tiles
 var TILE_DIRECTORY = tileDirectory()
+// HTTP_PORT - http port of web-service
 var HTTP_PORT = httpPort()
 
 func tileDirectory() string {
