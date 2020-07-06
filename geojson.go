@@ -26,7 +26,7 @@ func AddElevation(tileDir string, point []float64) ([]float64, error) {
 	return append(point[:2], float64(elevation)), nil
 }
 
-// AddElevation returns geojson with added third coordinate (elevation)
+// AddElevations returns geojson with added third coordinate (elevation)
 // Param tileDir - directory of hgt-tiles
 // Param geoJson - geojson for processing
 // Param skipErrors - if false AddElevations use premature exit (on first bad point in geojson). if true all points will be process but bad point will not to be contains elevation coordinate
