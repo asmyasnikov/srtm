@@ -20,6 +20,13 @@ Support 1-arcsecond and 3-arcseconds hgt-tiles.
 
 Provide web-service as elevation-service (like [github.com/asmyasnikov/elevation-service](https://github.com/asmyasnikov/elevation-service)) with allow CORS requests, auto-download zipped hgt-tiles from [imagico service](http://www.imagico.de/), unzipp and persist hgt-tiles in user-defined tile directory.
 
+
+Environment variables:
+ - `HTTP_PORT` - http port of web-service (default 80)
+ - `TILE_DIRECTORY` - directory of hgt tiles (default `./data/`)
+ - `LRU_CACHE_SIZE` - LRU cache size (default 1000)
+ - `STORE_IN_MEMROY` - boolean flag. If `false` hgt tiles not preliminary reading into memory, read few bytes at AddElevation phase. if `true` - all contents read preliminary into memory and store for future usage. (default `true`)
+
 Install and usage:
 ```
 # go get github.com/asmyasnikov/srtm/srtm-service
