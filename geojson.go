@@ -5,7 +5,10 @@ import (
 	geojson "github.com/paulmach/go.geojson"
 )
 
-func addElevation(tileDir string, point []float64) ([]float64, error) {
+// AddElevation returns point with 3 coordinates: [longitude, latitude, elevation]
+// @in tileDir - directory of hgt-tiles
+// @in point - [longitude, latitude]
+func AddElevation(tileDir string, point []float64) ([]float64, error) {
 	ll := LatLng{
 		Latitude:  point[1],
 		Longitude: point[0],
@@ -23,10 +26,14 @@ func addElevation(tileDir string, point []float64) ([]float64, error) {
 	return append(point[:2], float64(elevation)), nil
 }
 
+// AddElevation returns geojson with added third coordinate (elevation)
+// @in tileDir - directory of hgt-tiles
+// @in geoJson - geojson for processing
+// @in skipErrors - if false AddElevations use premature exit (on first bad point in geojson). if true all points will be process but bad point will not to be contains elevation coordinate
 func AddElevations(tileDir string, geoJson *geojson.Geometry, skipErrors bool) (*geojson.Geometry, error) {
 	switch geoJson.Type {
 	case geojson.GeometryPoint:
-		point, err := addElevation(tileDir, geoJson.Point)
+		point, err := AddElevation(tileDir, geoJson.Point)
 		if err != nil && !skipErrors {
 			return nil, err
 		}
@@ -34,7 +41,7 @@ func AddElevations(tileDir string, geoJson *geojson.Geometry, skipErrors bool) (
 		return geoJson, nil
 	case geojson.GeometryLineString:
 		for i, point := range geoJson.LineString {
-			point, err := addElevation(tileDir, point)
+			point, err := AddElevation(tileDir, point)
 			if err != nil && !skipErrors {
 				return nil, err
 			}
@@ -43,7 +50,7 @@ func AddElevations(tileDir string, geoJson *geojson.Geometry, skipErrors bool) (
 		return geoJson, nil
 	case geojson.GeometryMultiPoint:
 		for i, point := range geoJson.MultiPoint {
-			point, err := addElevation(tileDir, point)
+			point, err := AddElevation(tileDir, point)
 			if err != nil && !skipErrors {
 				return nil, err
 			}
@@ -53,7 +60,7 @@ func AddElevations(tileDir string, geoJson *geojson.Geometry, skipErrors bool) (
 	case geojson.GeometryPolygon:
 		for i := range geoJson.Polygon {
 			for j, point := range geoJson.Polygon[i] {
-				point, err := addElevation(tileDir, point)
+				point, err := AddElevation(tileDir, point)
 				if err != nil && !skipErrors {
 					return nil, err
 				}
@@ -64,7 +71,7 @@ func AddElevations(tileDir string, geoJson *geojson.Geometry, skipErrors bool) (
 	case geojson.GeometryMultiLineString:
 		for i := range geoJson.MultiLineString {
 			for j, point := range geoJson.MultiLineString[i] {
-				point, err := addElevation(tileDir, point)
+				point, err := AddElevation(tileDir, point)
 				if err != nil && !skipErrors {
 					return nil, err
 				}
