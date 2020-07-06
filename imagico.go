@@ -151,5 +151,5 @@ func download(tileDir, key string, ll LatLng) (string, error) {
 			return hgt, nil
 		}
 	}
-	return "", fmt.Errorf("tile file for key = %s is not exists (url -> %+v)", key, url, extracted)
+	return "", fmt.Errorf("tile file for key = %s is not exists (url %s -> %+v)", key, url, extracted)
 }

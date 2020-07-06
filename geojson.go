@@ -6,8 +6,8 @@ import (
 )
 
 // AddElevation returns point with 3 coordinates: [longitude, latitude, elevation]
-// @in tileDir - directory of hgt-tiles
-// @in point - [longitude, latitude]
+// Param tileDir - directory of hgt-tiles
+// Param point - [longitude, latitude]
 func AddElevation(tileDir string, point []float64) ([]float64, error) {
 	ll := LatLng{
 		Latitude:  point[1],
@@ -27,9 +27,9 @@ func AddElevation(tileDir string, point []float64) ([]float64, error) {
 }
 
 // AddElevation returns geojson with added third coordinate (elevation)
-// @in tileDir - directory of hgt-tiles
-// @in geoJson - geojson for processing
-// @in skipErrors - if false AddElevations use premature exit (on first bad point in geojson). if true all points will be process but bad point will not to be contains elevation coordinate
+// Param tileDir - directory of hgt-tiles
+// Param geoJson - geojson for processing
+// Param skipErrors - if false AddElevations use premature exit (on first bad point in geojson). if true all points will be process but bad point will not to be contains elevation coordinate
 func AddElevations(tileDir string, geoJson *geojson.Geometry, skipErrors bool) (*geojson.Geometry, error) {
 	switch geoJson.Type {
 	case geojson.GeometryPoint:
