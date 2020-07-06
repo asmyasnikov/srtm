@@ -33,7 +33,7 @@ func lruCacheSize() int {
 
 func storeInMemoryMode() bool {
 	v := os.Getenv("STORE_IN_MEMORY")
-	return v != "false"
+	return strings.ToLower(v) != "false"
 }
 
 func init() {
