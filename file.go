@@ -58,8 +58,6 @@ func Read(fname string, bytes []byte) (sw *LatLng, squareSize int, elevations []
 		return sw, squareSize, elevations, fmt.Errorf("hgt file cannot identified (only 1 arcsecond and 3 arcsecond supported, file size = %d)", len(bytes))
 	}
 
-	fmt.Println(fname, squareSize)
-
 	sw, err = southWest(fname)
 	if err != nil {
 		return sw, squareSize, elevations, errors.Wrap(err, "could not get corner coordinates from file name")
@@ -77,6 +75,21 @@ func Read(fname string, bytes []byte) (sw *LatLng, squareSize int, elevations []
 	}
 
 	return sw, squareSize, elevations, nil
+}
+
+// Meta reads meta information of SRTM file
+func Meta(fname string, size int64) (sw *LatLng, squareSize int, err error) {
+	if size == 12967201*2 {
+		// 1 arcsecond
+		squareSize = 3601
+	} else if size == 1442401*2 {
+		// 3 arcseconds
+		squareSize = 1201
+	} else {
+		return sw, squareSize, fmt.Errorf("hgt file cannot identified (only 1 arcsecond and 3 arcsecond supported, file size = %d)", size)
+	}
+	sw, err = southWest(fname)
+	return sw, squareSize, nil
 }
 
 // sw returns the southwest point contained in a HGT file.

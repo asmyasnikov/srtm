@@ -88,29 +88,29 @@ func moveHgt(sourcePath, destPath string) error {
 	return nil
 }
 
-func download(tileDir, key string, ll LatLng) (string, error) {
+func download(tileDir, key string, ll LatLng) (string, os.FileInfo, error) {
 	url, err := search(ll)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	targetDir := path.Join(os.TempDir(), key)
 	err = os.Mkdir(targetDir, 0755)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	defer os.RemoveAll(targetDir)
 	response, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	defer response.Body.Close()
 	b, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	zipReader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	extracted := make([]string, 0)
 	for _, file := range zipReader.File {
@@ -151,8 +151,12 @@ func download(tileDir, key string, ll LatLng) (string, error) {
 	}
 	for _, hgt := range extracted {
 		if strings.Contains(hgt, key) {
-			return hgt, nil
+			info, err := os.Stat(hgt)
+			if err != nil {
+				return "", nil, nil
+			}
+			return hgt, info, nil
 		}
 	}
-	return "", fmt.Errorf("tile file for key = %s is not exists (url %s -> %+v)", key, url, extracted)
+	return "", nil, fmt.Errorf("tile file for key = %s is not exists (url %s -> %+v)", key, url, extracted)
 }

@@ -1,16 +1,23 @@
 package srtm
 
 import (
+	"encoding/binary"
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
 	"math"
 	"os"
 	"path"
 	"strconv"
+	"strings"
+	"sync"
 )
 
 // LRU cache of hgt files
 var cache *lru.Cache
+
+var pool = &sync.Pool{
+	New: func() interface{} { return make([]byte, 2) },
+}
 
 func lruCacheSize() int {
 	v := os.Getenv("LRU_CACHE_SIZE")
@@ -22,6 +29,11 @@ func lruCacheSize() int {
 		return 1000
 	}
 	return s
+}
+
+func storeInMemoryMode() bool {
+	v := os.Getenv("STORE_IN_MEMORY")
+	return v != "false"
 }
 
 func init() {
@@ -61,13 +73,13 @@ var suffixes = []string{
 	".gz",
 }
 
-func tilePath(tileDir string, key string, ll LatLng) (string, error) {
+func tilePath(tileDir string, key string, ll LatLng) (string, os.FileInfo, error) {
 	tilePath := path.Join(tileDir, key)
 	for _, s := range suffixes {
 		tilePath = tilePath + s
-		_, err := os.Stat(tilePath)
+		info, err := os.Stat(tilePath)
 		if err == nil || os.IsExist(err) {
-			return tilePath, nil
+			return tilePath, info, nil
 		}
 	}
 	return download(tileDir, key, ll)
@@ -79,18 +91,35 @@ func loadTile(tileDir string, ll LatLng) (*Tile, error) {
 	if ok {
 		return t.(*Tile), nil
 	}
-	tPath, err := tilePath(tileDir, key, ll)
+	tPath, info, err := tilePath(tileDir, key, ll)
 	if err != nil {
 		return nil, err
 	}
-	sw, size, elevations, err := ReadFile(tPath)
+	if storeInMemoryMode() || strings.HasSuffix(tPath, ".gz") {
+		sw, size, elevations, err := ReadFile(tPath)
+		if err != nil {
+			return nil, err
+		}
+		t = &Tile{
+			file:       tPath,
+			sw:         sw,
+			size:       size,
+			elevations: elevations,
+		}
+		if evicted := cache.Add(key, t); evicted {
+			fmt.Printf("add tile '%s' to cache with evict oldest\n", key)
+		}
+		return t.(*Tile), nil
+	}
+	sw, size, err := Meta(tPath, info.Size())
 	if err != nil {
 		return nil, err
 	}
 	t = &Tile{
+		file:       tPath,
 		sw:         sw,
 		size:       size,
-		elevations: elevations,
+		elevations: nil,
 	}
 	if evicted := cache.Add(key, t); evicted {
 		fmt.Printf("add tile '%s' to cache with evict oldest\n", key)
@@ -100,6 +129,7 @@ func loadTile(tileDir string, ll LatLng) (*Tile, error) {
 
 // Tile struct contains hgt-tile meta-data and raw elevations slice
 type Tile struct {
+	file       string
 	sw         *LatLng
 	size       int
 	elevations []int16
@@ -133,7 +163,25 @@ func (t *Tile) normalize(v, max int, description string) int {
 }
 
 func (t *Tile) rowCol(row, col int, description string) int16 {
-	return t.elevations[(t.size-t.normalize(row, (t.size-1), "row "+description)-1)*t.size+t.normalize(col, t.size, "col "+description)]
+	idx := (t.size-t.normalize(row, (t.size-1), "row "+description)-1)*t.size + t.normalize(col, t.size, "col "+description)
+	if t.elevations != nil {
+		return t.elevations[idx]
+	}
+	fmt.Println("READING FROM FILE", t.file)
+	f, err := os.Open(t.file)
+	if err != nil {
+		fmt.Printf("error on open file %s\n", t.file)
+		return 0
+	}
+	defer f.Close()
+	b := pool.Get().([]byte)
+	defer pool.Put(b)
+	n, err := f.ReadAt(b, int64(idx)*2)
+	if n != 2 {
+		fmt.Printf("error on read file %s at index %d\n", t.file, int64(idx)*2)
+		return 0
+	}
+	return int16(binary.BigEndian.Uint16(b))
 }
 
 func (t *Tile) interpolate(row, col float64) float64 {
