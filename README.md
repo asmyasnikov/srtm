@@ -30,7 +30,7 @@ Environment variables:
  - `HTTP_PORT` - http port of web-service (default 80)
  - `TILE_DIRECTORY` - directory of hgt tiles (default `./data/`)
  - `LRU_CACHE_SIZE` - LRU cache size (default 1000)
- - `STORE_IN_MEMROY` - boolean flag. If `false` hgt tiles not preliminary reading into memory, read few bytes at AddElevation phase. if `true` - all contents read preliminary into memory and store for future usage. (default `true`)
+ - `STORE_IN_MEMORY` - boolean flag. If `false` hgt tiles not preliminary reading into memory, read few bytes at AddElevation phase. if `true` - all contents read preliminary into memory and store for future usage. (default `true`)
 
 Install and usage:
 ```
