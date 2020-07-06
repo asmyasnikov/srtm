@@ -13,23 +13,23 @@ func TestAddElevations_Point(t *testing.T) {
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	tileDir := path.Join(wd, "testdata")
-	point, err := geojson.UnmarshalGeometry([]byte(`{"type":"Point","coordinates":[-65.978894751,-45.993612885]}`))
+	point, err := geojson.UnmarshalGeometry([]byte(`{"type":"Point","coordinates":[-65.92054637662613,-45.02475838113942]}`))
 	require.NoError(t, err)
 	point, err = AddElevations(tileDir, point, false)
 	require.NoError(t, err)
 	require.Equal(t, geojson.GeometryPoint, point.Type)
 	require.Equal(t, 3, len(point.Point))
-	require.Equal(t, 17, int(math.Round(point.Point[2])))
+	require.Equal(t, 25, int(math.Round(point.Point[2])))
 	b, err := point.MarshalJSON()
 	require.NoError(t, err)
-	require.Equal(t, `{"type":"Point","coordinates":[-65.978894751,-45.993612885,17.00000276401252]}`, string(b))
+	require.Equal(t, `{"type":"Point","coordinates":[-65.92054637662613,-45.02475838113942,24.874129324015318]}`, string(b))
 }
 
 func TestAddElevations_LineString(t *testing.T) {
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	tileDir := path.Join(wd, "testdata")
-	lineString, err := geojson.UnmarshalGeometry([]byte(`{"type":"LineString","coordinates":[[-65.978894751,-45.993612885],[-65.978494751,-45.993614885],[-65.975894751,-45.993662885]]}`))
+	lineString, err := geojson.UnmarshalGeometry([]byte(`{"type":"LineString","coordinates":[[-65.92054637662613,-45.02475838113942],[-65.92054637362613,-45.02475838114942],[-65.92053637662613,-45.02475835113942]]}`))
 	require.NoError(t, err)
 	require.Equal(t, 3, len(lineString.LineString))
 	for _, point := range lineString.LineString {
@@ -44,5 +44,5 @@ func TestAddElevations_LineString(t *testing.T) {
 	}
 	b, err := lineString.MarshalJSON()
 	require.NoError(t, err)
-	require.Equal(t, `{"type":"LineString","coordinates":[[-65.978894751,-45.993612885,17.00000276401252],[-65.978494751,-45.993614885,18.42599987900539],[-65.975894751,-45.993662885,16]]}`, string(b))
+	require.Equal(t, `{"type":"LineString","coordinates":[[-65.92054637662613,-45.02475838113942,24.874129324015318],[-65.92054637362612,-45.02475838114942,24.87413069507827],[-65.92053637662613,-45.02475835113942,24.87891606292618]]}`, string(b))
 }

@@ -58,6 +58,8 @@ func Read(fname string, bytes []byte) (sw *LatLng, squareSize int, elevations []
 		return sw, squareSize, elevations, fmt.Errorf("hgt file cannot identified (only 1 arcsecond and 3 arcsecond supported, file size = %d)", len(bytes))
 	}
 
+	fmt.Println(fname, squareSize)
+
 	sw, err = southWest(fname)
 	if err != nil {
 		return sw, squareSize, elevations, errors.Wrap(err, "could not get corner coordinates from file name")

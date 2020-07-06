@@ -105,7 +105,8 @@ type Tile struct {
 	elevations []int16
 }
 
-func (t *Tile) getElevation(ll LatLng) (float64, error) {
+// GetElevation returns elevation for lat/lng
+func (t *Tile) GetElevation(ll LatLng) (float64, error) {
 	size := float64(t.size - 1)
 	row := (ll.Latitude - t.sw.Latitude) * size
 	col := (ll.Longitude - t.sw.Longitude) * size
@@ -131,21 +132,21 @@ func (t *Tile) normalize(v, max int, description string) int {
 	return v
 }
 
-func (t *Tile) rowCol(row, col int, description string) float64 {
-	return float64(t.elevations[(t.size-t.normalize(row, (t.size-1), "row "+description)-1)*t.size+t.normalize(col, t.size, "col "+description)])
+func (t *Tile) rowCol(row, col int, description string) int16 {
+	return t.elevations[(t.size-t.normalize(row, (t.size-1), "row "+description)-1)*t.size+t.normalize(col, t.size, "col "+description)]
 }
 
 func (t *Tile) interpolate(row, col float64) float64 {
 	rowLow := int(math.Floor(row))
-	rowHi := int(math.Ceil(row))
+	rowHi := rowLow + 1
 	rowFrac := row - float64(rowLow)
 	colLow := int(math.Floor(col))
-	colHi := int(math.Ceil(col))
+	colHi := colLow + 1
 	colFrac := col - float64(colLow)
-	v00 := t.rowCol(rowLow, colLow, "v00")
-	v10 := t.rowCol(rowLow, colHi, "v10")
-	v11 := t.rowCol(rowHi, colHi, "v11")
-	v01 := t.rowCol(rowHi, colLow, "v01")
+	v00 := float64(t.rowCol(rowLow, colLow, "v00"))
+	v10 := float64(t.rowCol(rowLow, colHi, "v10"))
+	v11 := float64(t.rowCol(rowHi, colHi, "v11"))
+	v01 := float64(t.rowCol(rowHi, colLow, "v01"))
 	v1 := avg(v00, v10, colFrac)
 	v2 := avg(v01, v11, colFrac)
 	return avg(v1, v2, rowFrac)

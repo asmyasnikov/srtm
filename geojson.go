@@ -18,9 +18,9 @@ func AddElevation(tileDir string, point []float64) ([]float64, error) {
 		fmt.Printf("loadTile: latLng = %s -> error %s\n", ll.String(), err.Error())
 		return nil, err
 	}
-	elevation, err := tile.getElevation(ll)
+	elevation, err := tile.GetElevation(ll)
 	if err != nil {
-		fmt.Printf("getElevation: latLng = %s -> error %s\n", ll.String(), err.Error())
+		fmt.Printf("GetElevation: latLng = %s -> error %s\n", ll.String(), err.Error())
 		return nil, err
 	}
 	return append(point[:2], float64(elevation)), nil
