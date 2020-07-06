@@ -105,6 +105,9 @@ func download(tileDir, key string, ll LatLng) (string, error) {
 	}
 	defer response.Body.Close()
 	b, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
 	zipReader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
 	if err != nil {
 		return "", err
