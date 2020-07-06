@@ -1,12 +1,17 @@
 FROM golang:latest AS build
 
-WORKDIR /build
-
 RUN CGO_ENABLED=0 go get -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
 
 FROM scratch
 
 COPY --from=build /go/bin/srtm-service /srtm-service
+
+ENV HTTP_PORT=80
+ENV TILE_DIRECTORY=/data
+ENV LRU_CACHE_SIZE=100
+ENV STORE_IN_MEMORY=false
+
+EXPOSE 80
 
 ENTRYPOINT ["/srtm-service"]
 
