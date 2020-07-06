@@ -1,4 +1,5 @@
 # srtm
+
 [![GoDoc](https://godoc.org/github.com/asmyasnikov/srtm?status.svg)](https://godoc.org/github.com/asmyasnikov/srtm)
 [![Go Report Card](https://goreportcard.com/badge/github.com/asmyasnikov/srtm)](https://goreportcard.com/report/github.com/asmyasnikov/srtm)
 [![Build Status](https://travis-ci.org/asmyasnikov/srtm.png)](https://travis-ci.org/asmyasnikov/srtm)
@@ -10,7 +11,7 @@ Based on [github.com/jda/srtm](https://github.com/jda/srtm) and inspired [geojso
 Written on pure golang. Golang realization:
  - use 1/2 of memory (instead nodejs elevation-service) in runtime 
  - golang slimmed docker image (bsed on busybox) have only 11MB (instead 161MB of slimmed nodeJs elevation-service)
- - 4676.27 trans/sec instead 1226.79 trans/sec for nodejs levation-service (tested with siege tool)
+ - 4676.27 trans/sec instead 1226.79 trans/sec for nodejs elevation-service (tested with siege tool)
 
 Support 1-arcsecond and 3-arcseconds hgt-tiles.
 
