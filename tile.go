@@ -167,7 +167,6 @@ func (t *Tile) rowCol(row, col int, description string) int16 {
 	if t.elevations != nil {
 		return t.elevations[idx]
 	}
-	fmt.Println("READING FROM FILE", t.file)
 	f, err := os.Open(t.file)
 	if err != nil {
 		fmt.Printf("error on open file %s\n", t.file)
