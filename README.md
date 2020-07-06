@@ -8,10 +8,13 @@ Go library for reading [Shuttle Radar Topography Mission](https://en.wikipedia.o
 
 Based on [github.com/jda/srtm](https://github.com/jda/srtm) and inspired [geojson-elevation](https://github.com/perliedman/geojson-elevation) and [node-hgt](https://github.com/perliedman/node-hgt)
 
-Written on pure golang. Golang realization:
- - use 1/2 of memory (instead nodejs elevation-service) in runtime 
- - golang slimmed docker image (bsed on busybox) have only 11MB (instead 161MB of slimmed nodeJs elevation-service)
- - 4676.27 trans/sec instead 1226.79 trans/sec for nodejs elevation-service (tested with siege tool)
+Written on pure golang.
+
+|                                                      | Memory usage at start, MB | Memory usage active phase, MB | docker slimmed image, MB | rps (siege trans/sec) |
+|------------------------------------------------------|---------------------------|-------------------------------|--------------------------|-----------------------|
+| nodeJs elevation-service                             | 29                        | 103                           | 161                      | 1226.79               |
+| golang srtm-service                                  | 2                         | 47                            | 11                       | 4676.27               |
+| golang srtm-service with env `STORE_IN_MEMORY=false` | 2                         | 25                            | 11                       | 712.89                |
 
 Support 1-arcsecond and 3-arcseconds hgt-tiles.
 
