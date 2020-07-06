@@ -4,7 +4,7 @@ WORKDIR /build
 
 RUN CGO_ENABLED=0 go get -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
 
-FROM ${ARCH}/busybox:glibc
+FROM amd64/busybox:glibc
 
 COPY --from=build /go/bin/srtm-service /usr/bin/srtm-service
 
