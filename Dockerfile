@@ -1,4 +1,4 @@
-FROM linux/amd64 amd64/golang:latest AS build
+FROM golang:latest AS build
 
 WORKDIR /build
 
