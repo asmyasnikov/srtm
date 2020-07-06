@@ -24,7 +24,6 @@ func lruCacheSize() int {
 	return s
 }
 
-
 func init() {
 	s := lruCacheSize()
 	fmt.Println("LRU cache size", s)
@@ -53,10 +52,10 @@ func tileKey(ll LatLng) string {
 			return "E"
 		}(),
 		int(math.Abs(math.Floor(ll.Longitude))),
-	);
+	)
 }
 
-var suffixes = []string {
+var suffixes = []string{
 	"",
 	".hgt",
 	".gz",
@@ -89,8 +88,8 @@ func loadTile(tileDir string, ll LatLng) (*Tile, error) {
 		return nil, err
 	}
 	t = &Tile{
-		sw: sw,
-		size: size,
+		sw:         sw,
+		size:       size,
 		elevations: elevations,
 	}
 	if evicted := cache.Add(key, t); evicted {
@@ -100,8 +99,8 @@ func loadTile(tileDir string, ll LatLng) (*Tile, error) {
 }
 
 type Tile struct {
-	sw *LatLng
-	size int
+	sw         *LatLng
+	size       int
 	elevations []int16
 }
 
@@ -115,8 +114,8 @@ func (t *Tile) getElevation(ll LatLng) (float64, error) {
 	return t.interpolate(row, col), nil
 }
 
-func avg (v1, v2, f float64) float64 {
-	return v1 + (v2 - v1) * f
+func avg(v1, v2, f float64) float64 {
+	return v1 + (v2-v1)*f
 }
 
 func (t *Tile) normalize(v, max int, description string) int {
@@ -132,7 +131,7 @@ func (t *Tile) normalize(v, max int, description string) int {
 }
 
 func (t *Tile) rowCol(row, col int, description string) float64 {
-	return float64(t.elevations[(t.size - t.normalize(row, (t.size-1), "row " + description) - 1) * t.size + t.normalize(col, t.size, "col " + description)])
+	return float64(t.elevations[(t.size-t.normalize(row, (t.size-1), "row "+description)-1)*t.size+t.normalize(col, t.size, "col "+description)])
 }
 
 func (t *Tile) interpolate(row, col float64) float64 {
@@ -150,4 +149,3 @@ func (t *Tile) interpolate(row, col float64) float64 {
 	v2 := avg(v01, v11, colFrac)
 	return avg(v1, v2, rowFrac)
 }
-

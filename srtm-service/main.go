@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	srtm "github.com/asmyasnikov/srtm"
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/rs/cors"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
-	srtm "github.com/asmyasnikov/srtm"
 )
 
 var TILE_DIRECTORY = tileDirectory()

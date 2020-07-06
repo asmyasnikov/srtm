@@ -48,10 +48,10 @@ func ReadFile(file string) (sw *LatLng, squareSize int, elevations []int16, err 
 
 // Read reads elevation for points from a SRTM file
 func Read(fname string, bytes []byte) (sw *LatLng, squareSize int, elevations []int16, err error) {
-	if len(bytes) == 12967201 * 2 {
+	if len(bytes) == 12967201*2 {
 		// 1 arcsecond
 		squareSize = 3601
-	} else if len(bytes) == 1442401 * 2 {
+	} else if len(bytes) == 1442401*2 {
 		// 3 arcseconds
 		squareSize = 1201
 	} else {
@@ -69,8 +69,8 @@ func Read(fname string, bytes []byte) (sw *LatLng, squareSize int, elevations []
 	for row := 0; row < squareSize; row++ {
 		// Longitude
 		for col := 0; col < squareSize; col++ {
-			idx := row * squareSize + col
-			elevations[idx] = int16(binary.BigEndian.Uint16(bytes[idx*2:idx*2+2]))
+			idx := row*squareSize + col
+			elevations[idx] = int16(binary.BigEndian.Uint16(bytes[idx*2 : idx*2+2]))
 		}
 	}
 
