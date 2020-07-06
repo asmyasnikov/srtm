@@ -6,9 +6,9 @@
 
 Go library for reading [Shuttle Radar Topography Mission](https://en.wikipedia.org/wiki/Shuttle_Radar_Topography_Mission) (SRTM) HGT files
 
-Based on [github.com/jda/srtm](https://github.com/jda/srtm) and inspired [geojson-elevation](https://github.com/perliedman/geojson-elevation) and [node-hgt](https://github.com/perliedman/node-hgt)
+Written on pure golang. Based on [github.com/jda/srtm](https://github.com/jda/srtm) and inspired [geojson-elevation](https://github.com/perliedman/geojson-elevation) and [node-hgt](https://github.com/perliedman/node-hgt)
 
-Written on pure golang.
+Compare testing results (tested on Intel Core i5-4670, 16GB memory, SSD)
 
 |                                                      | Memory usage at start, MB | Memory usage active phase, MB | docker slimmed image, MB | rps (siege trans/sec) |
 |------------------------------------------------------|---------------------------|-------------------------------|--------------------------|-----------------------|
