@@ -1,10 +1,10 @@
-ARG ARCH=amd64
+ARG GOARCH=amd64
 
 FROM golang:latest AS build
 
-RUN CGO_ENABLED=0 GOARCH=${ARCH} go get -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
+RUN CGO_ENABLED=0 GOARCH=${GOARCH} go get -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
 
-ARG ARCH
+ARG ARCH=amd64
 
 FROM --platform=linux/${ARCH} scratch
 
