@@ -98,6 +98,7 @@ func loadTile(tileDir string, ll LatLng) (*Tile, error) {
 	return t.(*Tile), nil
 }
 
+// Tile struct contains hgt-tile meta-data and raw elevations slice
 type Tile struct {
 	sw         *LatLng
 	size       int
