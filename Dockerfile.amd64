@@ -1,10 +1,10 @@
-FROM golang:latest AS build
+FROM amd64/golang:latest AS build
 
-RUN CGO_ENABLED=0 GOARCH=amd64 go get -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
+RUN CGO_ENABLED=0 go get -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
 
 ARG ARCH
 
-FROM --platform=linux/amd64 scratch
+FROM scratch
 
 COPY --from=build /go/bin/srtm-service /srtm-service
 
