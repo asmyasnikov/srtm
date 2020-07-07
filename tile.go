@@ -183,6 +183,38 @@ func (t *Tile) rowCol(row, col int, description string) int16 {
 	return int16(binary.BigEndian.Uint16(b))
 }
 
+func (t *Tile) elevation(f *os.File, idx int) int16 {
+	b := pool.Get().([]byte)
+	defer pool.Put(b)
+	n, err := f.ReadAt(b, int64(idx)*2)
+	if err != nil {
+		fmt.Printf("error '%s' on read file %s at index %d: %s\n", err.Error(), t.file, idx)
+		return 0
+	}
+	if n != 2 {
+		fmt.Printf("error on read file %s at index %d\n", t.file, idx)
+		return 0
+	}
+	return int16(binary.BigEndian.Uint16(b))
+}
+
+func (t *Tile) quadRowCol(row1, col1, row2, col2, row3, col3, row4, col4 int) (int16, int16, int16, int16) {
+	idx1 := (t.size-t.normalize(row1, (t.size-1), "row idx1")-1)*t.size + t.normalize(col1, t.size, "col idx1")
+	idx2 := (t.size-t.normalize(row2, (t.size-1), "row idx2")-1)*t.size + t.normalize(col2, t.size, "col idx2")
+	idx3 := (t.size-t.normalize(row3, (t.size-1), "row idx3")-1)*t.size + t.normalize(col3, t.size, "col idx3")
+	idx4 := (t.size-t.normalize(row4, (t.size-1), "row idx4")-1)*t.size + t.normalize(col4, t.size, "col idx4")
+	if t.elevations != nil {
+		return t.elevations[idx1], t.elevations[idx2], t.elevations[idx3], t.elevations[idx4]
+	}
+	f, err := os.Open(t.file)
+	if err != nil {
+		fmt.Printf("error on open file %s\n", t.file)
+		return 0, 0, 0, 0
+	}
+	defer f.Close()
+	return t.elevation(f, idx1), t.elevation(f, idx2), t.elevation(f, idx3), t.elevation(f, idx4)
+}
+
 func (t *Tile) interpolate(row, col float64) float64 {
 	rowLow := int(math.Floor(row))
 	rowHi := rowLow + 1
@@ -190,11 +222,8 @@ func (t *Tile) interpolate(row, col float64) float64 {
 	colLow := int(math.Floor(col))
 	colHi := colLow + 1
 	colFrac := col - float64(colLow)
-	v00 := float64(t.rowCol(rowLow, colLow, "v00"))
-	v10 := float64(t.rowCol(rowLow, colHi, "v10"))
-	v11 := float64(t.rowCol(rowHi, colHi, "v11"))
-	v01 := float64(t.rowCol(rowHi, colLow, "v01"))
-	v1 := avg(v00, v10, colFrac)
-	v2 := avg(v01, v11, colFrac)
+	v00, v10, v11, v01 := t.quadRowCol(rowLow, colLow, rowLow, colHi, rowHi, colHi, rowHi, colLow)
+	v1 := avg(float64(v00), float64(v10), colFrac)
+	v2 := avg(float64(v01), float64(v11), colFrac)
 	return avg(v1, v2, rowFrac)
 }
