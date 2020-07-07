@@ -8,13 +8,13 @@ Go library for reading [Shuttle Radar Topography Mission](https://en.wikipedia.o
 
 Written on pure golang. Based on [github.com/jda/srtm](https://github.com/jda/srtm) and inspired [geojson-elevation](https://github.com/perliedman/geojson-elevation) and [node-hgt](https://github.com/perliedman/node-hgt)
 
-Compare testing results (tested on Intel Core i5-4670, 16GB memory, SSD). 
+Compare testing results (tested on Intel Core i5-4670, 16GB memory, SSD, elevation/srtm services run inside docker with port forwarding). 
 
 |                                                      | Memory usage at start, MB | Memory usage active phase, MB | docker slimmed image, MB | rps (siege trans/sec) |
 |------------------------------------------------------|---------------------------|-------------------------------|--------------------------|-----------------------|
 | node.js [elevation-service](https://github.com/asmyasnikov/elevation-service)                            | 29                        | 103                           | 161                      | 1226.79               |
 | golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) | 2                         | 47                            | 11                       | 4676.27               |
-| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) with env `STORE_IN_MEMORY=false` | 2                         | 15                            | 11                       | 1324.25               |
+| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) with env `STORE_IN_MEMORY=false` | 2                         | 15                            | 11                       | 2767.19               |
 
 Siege run from command
 ```
