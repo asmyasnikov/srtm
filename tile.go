@@ -188,7 +188,7 @@ func (t *Tile) elevation(f *os.File, idx int) int16 {
 	defer pool.Put(b)
 	n, err := f.ReadAt(b, int64(idx)*2)
 	if err != nil {
-		fmt.Printf("error '%s' on read file %s at index %d: %s\n", err.Error(), t.file, idx)
+		fmt.Printf("error '%s' on read file %s at index %d\n", err.Error(), t.file, idx)
 		return 0
 	}
 	if n != 2 {
