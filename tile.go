@@ -11,9 +11,11 @@ import (
 	"sync"
 )
 
-// LRU cache of hgt files
 var cache *lru.Cache
 var mtx sync.Mutex
+var tileDirectory = "./data"
+var storeInMemory = false
+var parallel = false
 
 func init() {
 	c, err := lru.NewWithEvict(1000, func(key interface{}, value interface{}) {
@@ -26,9 +28,12 @@ func init() {
 }
 
 // Init make initialization of cache
-func Init(lruCacheSize int) {
+func Init(lruCacheSize int, tileDir string, storeInMemoryMode, parallelMode bool) {
 	log.Info().Caller().Int("LRU cache size", lruCacheSize).Msg("")
 	_ = cache.Resize(lruCacheSize)
+	tileDirectory = tileDir
+	storeInMemory = storeInMemoryMode
+	parallel = parallelMode
 }
 
 func tileKey(ll LatLng) string {
@@ -68,7 +73,7 @@ func tilePath(tileDir string, key string, ll LatLng) (string, os.FileInfo, error
 	return download(tileDir, key, ll)
 }
 
-func loadTile(tileDir string, storeInMemoryMode bool, ll LatLng) (*Tile, error) {
+func loadTile(ll LatLng) (*Tile, error) {
 	key := tileKey(ll)
 	mtx.Lock()
 	defer mtx.Unlock()
@@ -76,11 +81,11 @@ func loadTile(tileDir string, storeInMemoryMode bool, ll LatLng) (*Tile, error) 
 	if ok {
 		return t.(*Tile), nil
 	}
-	tPath, info, err := tilePath(tileDir, key, ll)
+	tPath, info, err := tilePath(tileDirectory, key, ll)
 	if err != nil {
 		return nil, err
 	}
-	if storeInMemoryMode || strings.HasSuffix(tPath, ".gz") {
+	if storeInMemory || strings.HasSuffix(tPath, ".gz") {
 		sw, size, elevations, err := ReadFile(tPath)
 		if err != nil {
 			return nil, err

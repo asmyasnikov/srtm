@@ -80,15 +80,17 @@ func init() {
 		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
 	}
 	lineString = geojson.NewLineStringGeometry(coordinates)
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	tileDirectory = path.Join(wd, "testdata")
 }
 
 func TestAddElevations_Point(t *testing.T) {
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	tileDir := path.Join(wd, "testdata")
 	point, err := geojson.UnmarshalGeometry([]byte(`{"type":"Point","coordinates":[-65.92054637662613,-45.02475838113942]}`))
 	require.NoError(t, err)
-	point, err = AddElevations(tileDir, true, false, point, false)
+	point, err = AddElevations(point, false)
 	require.NoError(t, err)
 	require.Equal(t, geojson.GeometryPoint, point.Type)
 	require.Equal(t, 3, len(point.Point))
@@ -99,16 +101,13 @@ func TestAddElevations_Point(t *testing.T) {
 }
 
 func TestAddElevations_LineString(t *testing.T) {
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	tileDir := path.Join(wd, "testdata")
 	lineString, err := geojson.UnmarshalGeometry([]byte(`{"type":"LineString","coordinates":[[-65.92054637662613,-45.02475838113942],[-65.92054637362613,-45.02475838114942],[-65.92053637662613,-45.02475835113942]]}`))
 	require.NoError(t, err)
 	require.Equal(t, 3, len(lineString.LineString))
 	for _, point := range lineString.LineString {
 		require.Equal(t, 2, len(point))
 	}
-	lineString, err = AddElevations(tileDir, true, false, lineString, false)
+	lineString, err = AddElevations(lineString, false)
 	require.NoError(t, err)
 	require.Equal(t, geojson.GeometryLineString, lineString.Type)
 	require.Equal(t, 3, len(lineString.LineString))
@@ -121,29 +120,22 @@ func TestAddElevations_LineString(t *testing.T) {
 }
 
 func TestAddElevations_LineString_Rand(t *testing.T) {
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	tileDir := path.Join(wd, "testdata")
-	lineString, err = AddElevations(tileDir, false, false, lineString, false)
+	_, err := AddElevations(lineString, false)
 	require.NoError(t, err)
 }
 
 func BenchmarkAddElevations_LineString_Sequentially(b *testing.B) {
-	wd, err := os.Getwd()
-	require.NoError(b, err)
-	tileDir := path.Join(wd, "testdata")
+	parallel = false
 	for i := 0; i < b.N; i++ {
-		lineString, err = AddElevations(tileDir, false, false, lineString, false)
+		_, err := AddElevations(lineString, false)
 		require.NoError(b, err)
 	}
 }
 
 func BenchmarkAddElevations_LineString_Parallel(b *testing.B) {
-	wd, err := os.Getwd()
-	require.NoError(b, err)
-	tileDir := path.Join(wd, "testdata")
+	parallel = true
 	for i := 0; i < b.N; i++ {
-		lineString, err = AddElevations(tileDir, false, true, lineString, false)
+		_, err := AddElevations(lineString, false)
 		require.NoError(b, err)
 	}
 }

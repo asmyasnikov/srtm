@@ -13,18 +13,6 @@ import (
 	"strings"
 )
 
-// TILE_DIRECTORY is a directory of hgt-tiles
-var TILE_DIRECTORY = tileDirectory()
-
-// HTTP_PORT - http port of web-service
-var HTTP_PORT = httpPort()
-
-// STORE_IN_MEMORY - store elevation data in memory (all hgt file)
-var STORE_IN_MEMORY = storeInMemoryMode()
-
-// PARALLEL - store elevation data in memory (all hgt file)
-var PARALLEL = parallel()
-
 func tileDirectory() string {
 	v := os.Getenv("TILE_DIRECTORY")
 	if len(v) == 0 {
@@ -78,7 +66,7 @@ func init() {
 		return
 	}
 	zerolog.SetGlobalLevel(l)
-	srtm.Init(lruCacheSize())
+	srtm.Init(lruCacheSize(), tileDirectory(), storeInMemoryMode(), parallel())
 }
 
 func main() {
@@ -86,7 +74,7 @@ func main() {
 	mux.HandleFunc("/", handleAddElevations)
 
 	handler := cors.Default().Handler(mux)
-	if err := http.ListenAndServe(":"+strconv.Itoa(HTTP_PORT), handler); err != nil {
+	if err := http.ListenAndServe(":"+strconv.Itoa(httpPort()), handler); err != nil {
 		log.Error().Caller().Err(err).Msg("")
 	}
 }
@@ -102,7 +90,7 @@ func handleAddElevations(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't unmarshall body", http.StatusBadRequest)
 		return
 	}
-	geoJson, err = srtm.AddElevations(TILE_DIRECTORY, STORE_IN_MEMORY, PARALLEL, geoJson, true)
+	geoJson, err = srtm.AddElevations(geoJson, true)
 	if err != nil {
 		http.Error(w, "can't read body", http.StatusInternalServerError)
 		return

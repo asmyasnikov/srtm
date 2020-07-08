@@ -105,7 +105,7 @@ func download(tileDir, key string, ll LatLng) (string, os.FileInfo, error) {
 	for i, url := range urls {
 		go func(i int, url string) {
 			defer wg.Done()
-			targetDir := path.Join(os.TempDir(), key + "-" + strconv.Itoa(i))
+			targetDir := path.Join(os.TempDir(), key+"-"+strconv.Itoa(i))
 			err = os.Mkdir(targetDir, 0755)
 			if err != nil {
 				log.Error().Caller().Err(err).Msg("")

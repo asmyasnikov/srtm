@@ -8,12 +8,16 @@ import (
 	"testing"
 )
 
-func TestGetElevation(t *testing.T) {
+func init() {
 	wd, err := os.Getwd()
-	require.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
+	tileDirectory = path.Join(wd, "testdata")
+}
+
+func TestGetElevation(t *testing.T) {
 	tile, err := loadTile(
-		path.Join(wd, "testdata"),
-		true,
 		LatLng{
 			Latitude:  -45.55457,
 			Longitude: -65.23555,

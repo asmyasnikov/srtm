@@ -9,12 +9,12 @@ import (
 // AddElevation returns point with 3 coordinates: [longitude, latitude, elevation]
 // Param tileDir - directory of hgt-tiles
 // Param point - [longitude, latitude]
-func AddElevation(tileDir string, storeInMemoryMode bool, point []float64) ([]float64, error) {
+func AddElevation(point []float64) ([]float64, error) {
 	ll := LatLng{
 		Latitude:  point[1],
 		Longitude: point[0],
 	}
-	tile, err := loadTile(tileDir, storeInMemoryMode, ll)
+	tile, err := loadTile(ll)
 	if err != nil {
 		log.Error().Caller().Err(err).Msgf("loadTile: latLng = %s -> error %s\n", ll.String(), err.Error())
 		return nil, err
@@ -31,10 +31,10 @@ func AddElevation(tileDir string, storeInMemoryMode bool, point []float64) ([]fl
 // Param tileDir - directory of hgt-tiles
 // Param geoJson - geojson for processing
 // Param skipErrors - if false AddElevations use premature exit (on first bad point in geojson). if true all points will be process but bad point will not to be contains elevation coordinate
-func AddElevations(tileDir string, storeInMemoryMode, parallel bool, geoJson *geojson.Geometry, skipErrors bool) (*geojson.Geometry, error) {
+func AddElevations(geoJson *geojson.Geometry, skipErrors bool) (*geojson.Geometry, error) {
 	switch geoJson.Type {
 	case geojson.GeometryPoint:
-		point, err := AddElevation(tileDir, storeInMemoryMode, geoJson.Point)
+		point, err := AddElevation(geoJson.Point)
 		if err != nil && !skipErrors {
 			return nil, err
 		}
@@ -45,7 +45,7 @@ func AddElevations(tileDir string, storeInMemoryMode, parallel bool, geoJson *ge
 		wg.Add(len(geoJson.LineString))
 		processor := func(i int) {
 			defer wg.Done()
-			point, err := AddElevation(tileDir, storeInMemoryMode, geoJson.LineString[i])
+			point, err := AddElevation(geoJson.LineString[i])
 			if err != nil && !skipErrors {
 				log.Error().Caller().Err(err).Msg("")
 			}
@@ -64,7 +64,7 @@ func AddElevations(tileDir string, storeInMemoryMode, parallel bool, geoJson *ge
 		wg := &sync.WaitGroup{}
 		wg.Add(len(geoJson.MultiPoint))
 		processor := func(i int) {
-			point, err := AddElevation(tileDir, storeInMemoryMode, geoJson.MultiPoint[i])
+			point, err := AddElevation(geoJson.MultiPoint[i])
 			if err != nil && !skipErrors {
 				log.Error().Caller().Err(err).Msg("")
 			}
@@ -82,7 +82,7 @@ func AddElevations(tileDir string, storeInMemoryMode, parallel bool, geoJson *ge
 	case geojson.GeometryPolygon:
 		wg := &sync.WaitGroup{}
 		processor := func(i, j int) {
-			point, err := AddElevation(tileDir, storeInMemoryMode, geoJson.Polygon[i][j])
+			point, err := AddElevation(geoJson.Polygon[i][j])
 			if err != nil && !skipErrors {
 				log.Error().Caller().Err(err).Msg("")
 			}
@@ -103,7 +103,7 @@ func AddElevations(tileDir string, storeInMemoryMode, parallel bool, geoJson *ge
 	case geojson.GeometryMultiLineString:
 		wg := &sync.WaitGroup{}
 		processor := func(i, j int) {
-			point, err := AddElevation(tileDir, storeInMemoryMode, geoJson.MultiLineString[i][j])
+			point, err := AddElevation(geoJson.MultiLineString[i][j])
 			if err != nil && !skipErrors {
 				log.Error().Caller().Err(err).Msg("")
 			}
