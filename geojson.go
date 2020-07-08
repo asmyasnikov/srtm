@@ -1,8 +1,9 @@
 package srtm
 
 import (
-	"fmt"
 	geojson "github.com/paulmach/go.geojson"
+	"github.com/rs/zerolog/log"
+	"sync"
 )
 
 // AddElevation returns point with 3 coordinates: [longitude, latitude, elevation]
@@ -15,12 +16,12 @@ func AddElevation(tileDir string, point []float64) ([]float64, error) {
 	}
 	tile, err := loadTile(tileDir, ll)
 	if err != nil {
-		fmt.Printf("loadTile: latLng = %s -> error %s\n", ll.String(), err.Error())
+		log.Error().Caller().Err(err).Msgf("loadTile: latLng = %s -> error %s\n", ll.String(), err.Error())
 		return nil, err
 	}
 	elevation, err := tile.GetElevation(ll)
 	if err != nil {
-		fmt.Printf("GetElevation: latLng = %s -> error %s\n", ll.String(), err.Error())
+		log.Error().Caller().Err(err).Msgf("GetElevation: latLng = %s -> error %s\n", ll.String(), err.Error())
 		return nil, err
 	}
 	return append(point[:2], float64(elevation)), nil
@@ -40,44 +41,65 @@ func AddElevations(tileDir string, geoJson *geojson.Geometry, skipErrors bool) (
 		geoJson.Point = point
 		return geoJson, nil
 	case geojson.GeometryLineString:
-		for i, point := range geoJson.LineString {
-			point, err := AddElevation(tileDir, point)
-			if err != nil && !skipErrors {
-				return nil, err
-			}
-			geoJson.LineString[i] = point
+		wg := &sync.WaitGroup{}
+		wg.Add(len(geoJson.LineString))
+		for i := range geoJson.LineString {
+			go func(i int) {
+				defer wg.Done()
+				point, err := AddElevation(tileDir, geoJson.LineString[i])
+				if err != nil && !skipErrors {
+					log.Error().Caller().Err(err).Msg("")
+				}
+				geoJson.LineString[i] = point
+			}(i)
 		}
+		wg.Wait()
 		return geoJson, nil
 	case geojson.GeometryMultiPoint:
-		for i, point := range geoJson.MultiPoint {
-			point, err := AddElevation(tileDir, point)
-			if err != nil && !skipErrors {
-				return nil, err
-			}
-			geoJson.MultiPoint[i] = point
+		wg := &sync.WaitGroup{}
+		wg.Add(len(geoJson.MultiPoint))
+		for i := range geoJson.MultiPoint {
+			go func(i int) {
+				point, err := AddElevation(tileDir, geoJson.MultiPoint[i])
+				if err != nil && !skipErrors {
+					log.Error().Caller().Err(err).Msg("")
+				}
+				geoJson.MultiPoint[i] = point
+			}(i)
 		}
+		wg.Wait()
 		return geoJson, nil
 	case geojson.GeometryPolygon:
+		wg := &sync.WaitGroup{}
 		for i := range geoJson.Polygon {
-			for j, point := range geoJson.Polygon[i] {
-				point, err := AddElevation(tileDir, point)
-				if err != nil && !skipErrors {
-					return nil, err
-				}
-				geoJson.Polygon[i][j] = point
+			wg.Add(len(geoJson.Polygon[i]))
+			for j := range geoJson.Polygon[i] {
+				go func(i, j int) {
+					point, err := AddElevation(tileDir, geoJson.Polygon[i][j])
+					if err != nil && !skipErrors {
+						log.Error().Caller().Err(err).Msg("")
+					}
+					geoJson.Polygon[i][j] = point
+				}(i, j)
 			}
 		}
+		wg.Wait()
 		return geoJson, nil
 	case geojson.GeometryMultiLineString:
+		wg := &sync.WaitGroup{}
 		for i := range geoJson.MultiLineString {
+			wg.Add(len(geoJson.MultiLineString[i]))
 			for j, point := range geoJson.MultiLineString[i] {
-				point, err := AddElevation(tileDir, point)
-				if err != nil && !skipErrors {
-					return nil, err
-				}
-				geoJson.MultiLineString[i][j] = point
+				go func(i, j int) {
+					point, err := AddElevation(tileDir, point)
+					if err != nil && !skipErrors {
+						log.Error().Caller().Err(err).Msg("")
+					}
+					geoJson.MultiLineString[i][j] = point
+				}(i, j)
 			}
 		}
+		wg.Wait()
 		return geoJson, nil
 	default:
 		return geoJson, nil

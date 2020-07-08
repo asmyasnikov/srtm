@@ -6,9 +6,9 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -29,7 +29,7 @@ var client = &http.Client{
 func parse(r io.Reader) (string, error) {
 	var v []interface{}
 	if err := json.NewDecoder(r).Decode(&v); err != nil {
-		fmt.Println("error on decode json", err)
+		log.Error().Caller().Err(err).Msg("decode json")
 		return "", err
 	}
 	if len(v) == 0 {
@@ -53,12 +53,12 @@ func parse(r io.Reader) (string, error) {
 func search(ll LatLng) (string, error) {
 	r, err := client.Get(fmt.Sprintf("http://www.imagico.de/map/dem_json.php?date=&lon=%0.7f&lat=%0.7f&lonE=%0.7f&latE=%0.7f&vf=1", ll.Longitude, ll.Latitude, ll.Longitude, ll.Latitude))
 	if err != nil {
-		fmt.Println("error on GET", err)
+		log.Error().Caller().Err(err).Msg("GET")
 		return "", err
 	}
 	if r.StatusCode != http.StatusOK {
 		err = fmt.Errorf("status code for request '%s' is not Ok (%d)", r.Request.RequestURI, r.StatusCode)
-		fmt.Println("error on GET", err)
+		log.Error().Caller().Err(err).Msg("GET")
 		return "", err
 	}
 	defer r.Body.Close()
@@ -116,7 +116,7 @@ func download(tileDir, key string, ll LatLng) (string, os.FileInfo, error) {
 	for _, file := range zipReader.File {
 		zippedFile, err := file.Open()
 		if err != nil {
-			log.Fatal(err)
+			log.Error().Caller().Err(err).Msg("unzip")
 		}
 		extractedFilePath := filepath.Join(
 			targetDir,
@@ -131,11 +131,11 @@ func download(tileDir, key string, ll LatLng) (string, os.FileInfo, error) {
 				file.Mode(),
 			)
 			if err != nil {
-				fmt.Println("unzip:", err)
+				log.Error().Caller().Err(err).Msg("open file")
 			}
 			_, err = io.Copy(outputFile, zippedFile)
 			if err != nil {
-				fmt.Println("unzip:", err)
+				log.Error().Caller().Err(err).Msg("copy")
 			}
 			outputFile.Close()
 			if err == nil {
@@ -143,7 +143,7 @@ func download(tileDir, key string, ll LatLng) (string, os.FileInfo, error) {
 				hgt := path.Join(tileDir, file)
 				extracted = append(extracted, hgt)
 				if err := moveHgt(extractedFilePath, hgt); err != nil {
-					fmt.Println("move: ", err)
+					log.Error().Caller().Err(err).Msg("move")
 				}
 			}
 		}

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
+	"github.com/rs/zerolog/log"
 	"math"
 	"os"
 	"path"
@@ -38,9 +39,9 @@ func storeInMemoryMode() bool {
 
 func init() {
 	s := lruCacheSize()
-	fmt.Println("LRU cache size", s)
+	log.Info().Caller().Int("LRU cache size", s).Msg("")
 	c, err := lru.NewWithEvict(s, func(key interface{}, value interface{}) {
-		fmt.Printf("remove tile '%s' from cache\n", key.(string))
+		log.Debug().Caller().Msgf("remove tile '%s' from cache\n", key.(string))
 	})
 	if err != nil {
 		panic(err)
@@ -107,7 +108,7 @@ func loadTile(tileDir string, ll LatLng) (*Tile, error) {
 			elevations: elevations,
 		}
 		if evicted := cache.Add(key, t); evicted {
-			fmt.Printf("add tile '%s' to cache with evict oldest\n", key)
+			log.Error().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest\n", key)
 		}
 		return t.(*Tile), nil
 	}
@@ -122,7 +123,7 @@ func loadTile(tileDir string, ll LatLng) (*Tile, error) {
 		elevations: nil,
 	}
 	if evicted := cache.Add(key, t); evicted {
-		fmt.Printf("add tile '%s' to cache with evict oldest\n", key)
+		log.Error().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest\n", key)
 	}
 	return t.(*Tile), nil
 }
@@ -152,11 +153,11 @@ func avg(v1, v2, f float64) float64 {
 
 func (t *Tile) normalize(v, max int, description string) int {
 	if v < 0 {
-		fmt.Printf("normalize: error value %d of %s\n", v, description)
+		log.Error().Caller().Msgf("normalize: error value %d of %s\n", v, description)
 		return 0
 	}
 	if v > max {
-		fmt.Printf("normalize: error value %d of %s\n", v, description)
+		log.Error().Caller().Msgf("normalize: error value %d of %s\n", v, description)
 		return max
 	}
 	return v
@@ -169,7 +170,7 @@ func (t *Tile) rowCol(row, col int, description string) int16 {
 	}
 	f, err := os.Open(t.file)
 	if err != nil {
-		fmt.Printf("error on open file %s\n", t.file)
+		log.Error().Caller().Err(err).Msgf("error on open file %s\n", t.file)
 		return 0
 	}
 	defer f.Close()
@@ -177,7 +178,7 @@ func (t *Tile) rowCol(row, col int, description string) int16 {
 	defer pool.Put(b)
 	n, err := f.ReadAt(b, int64(idx)*2)
 	if n != 2 {
-		fmt.Printf("error on read file %s at index %d\n", t.file, int64(idx)*2)
+		log.Error().Caller().Err(err).Msgf("error on read file %s at index %d\n", t.file, int64(idx)*2)
 		return 0
 	}
 	return int16(binary.BigEndian.Uint16(b))
@@ -188,11 +189,11 @@ func (t *Tile) elevation(f *os.File, idx int) int16 {
 	defer pool.Put(b)
 	n, err := f.ReadAt(b, int64(idx)*2)
 	if err != nil {
-		fmt.Printf("error '%s' on read file %s at index %d\n", err.Error(), t.file, idx)
+		log.Error().Caller().Err(err).Msgf("error '%s' on read file %s at index %d\n", err.Error(), t.file, idx)
 		return 0
 	}
 	if n != 2 {
-		fmt.Printf("error on read file %s at index %d\n", t.file, idx)
+		log.Error().Caller().Err(err).Msgf("error on read file %s at index %d\n", t.file, idx)
 		return 0
 	}
 	return int16(binary.BigEndian.Uint16(b))
@@ -208,7 +209,7 @@ func (t *Tile) quadRowCol(row1, col1, row2, col2, row3, col3, row4, col4 int) (i
 	}
 	f, err := os.Open(t.file)
 	if err != nil {
-		fmt.Printf("error on open file %s\n", t.file)
+		log.Error().Caller().Err(err).Msgf("error on open file %s\n", t.file)
 		return 0, 0, 0, 0
 	}
 	defer f.Close()

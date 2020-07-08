@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	srtm "github.com/asmyasnikov/srtm"
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/rs/cors"
+	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -43,7 +43,7 @@ func main() {
 
 	handler := cors.Default().Handler(mux)
 	if err := http.ListenAndServe(":"+strconv.Itoa(HTTP_PORT), handler); err != nil {
-		fmt.Println(err)
+		log.Error().Caller().Err(err).Msg("")
 	}
 }
 
@@ -68,7 +68,6 @@ func handleAddElevations(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't read body", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(string(body))
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
