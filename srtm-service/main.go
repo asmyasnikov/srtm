@@ -22,6 +22,9 @@ var HTTP_PORT = httpPort()
 // STORE_IN_MEMORY - store elevation data in memory (all hgt file)
 var STORE_IN_MEMORY = storeInMemoryMode()
 
+// PARALLEL - store elevation data in memory (all hgt file)
+var PARALLEL = parallel()
+
 func tileDirectory() string {
 	v := os.Getenv("TILE_DIRECTORY")
 	if len(v) == 0 {
@@ -56,6 +59,11 @@ func lruCacheSize() int {
 
 func storeInMemoryMode() bool {
 	v := os.Getenv("STORE_IN_MEMORY")
+	return strings.ToLower(v) != "false"
+}
+
+func parallel() bool {
+	v := os.Getenv("PARALLEL")
 	return strings.ToLower(v) != "false"
 }
 
@@ -94,7 +102,7 @@ func handleAddElevations(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't unmarshall body", http.StatusBadRequest)
 		return
 	}
-	geoJson, err = srtm.AddElevations(TILE_DIRECTORY, STORE_IN_MEMORY, geoJson, true)
+	geoJson, err = srtm.AddElevations(TILE_DIRECTORY, STORE_IN_MEMORY, PARALLEL, geoJson, true)
 	if err != nil {
 		http.Error(w, "can't read body", http.StatusInternalServerError)
 		return

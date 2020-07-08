@@ -1,7 +1,6 @@
 package srtm
 
 import (
-	"encoding/binary"
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/rs/zerolog/log"
@@ -9,15 +8,10 @@ import (
 	"os"
 	"path"
 	"strings"
-	"sync"
 )
 
 // LRU cache of hgt files
 var cache *lru.Cache
-
-var pool = &sync.Pool{
-	New: func() interface{} { return make([]byte, 2) },
-}
 
 func init() {
 	c, err := lru.NewWithEvict(1, func(key interface{}, value interface{}) {
@@ -88,7 +82,7 @@ func loadTile(tileDir string, storeInMemoryMode bool, ll LatLng) (*Tile, error) 
 			return nil, err
 		}
 		t = &Tile{
-			file:       tPath,
+			f:          nil,
 			sw:         sw,
 			size:       size,
 			elevations: elevations,
@@ -103,20 +97,20 @@ func loadTile(tileDir string, storeInMemoryMode bool, ll LatLng) (*Tile, error) 
 		return nil, err
 	}
 	t = &Tile{
-		file:       tPath,
+		f:          newFileReader(tPath),
 		sw:         sw,
 		size:       size,
 		elevations: nil,
 	}
 	if evicted := cache.Add(key, t); evicted {
-		log.Error().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest\n", key)
+		log.Debug().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest\n", key)
 	}
 	return t.(*Tile), nil
 }
 
 // Tile struct contains hgt-tile meta-data and raw elevations slice
 type Tile struct {
-	file       string
+	f          *FileReader
 	sw         *LatLng
 	size       int
 	elevations []int16
@@ -154,35 +148,18 @@ func (t *Tile) rowCol(row, col int, description string) int16 {
 	if t.elevations != nil {
 		return t.elevations[idx]
 	}
-	f, err := os.Open(t.file)
+	err := t.f.open()
 	if err != nil {
-		log.Error().Caller().Err(err).Msgf("error on open file %s\n", t.file)
+		log.Error().Caller().Err(err).Msg("")
 		return 0
 	}
-	defer f.Close()
-	b := pool.Get().([]byte)
-	defer pool.Put(b)
-	n, err := f.ReadAt(b, int64(idx)*2)
-	if n != 2 {
-		log.Error().Caller().Err(err).Msgf("error on read file %s at index %d\n", t.file, int64(idx)*2)
-		return 0
-	}
-	return int16(binary.BigEndian.Uint16(b))
-}
-
-func (t *Tile) elevation(f *os.File, idx int) int16 {
-	b := pool.Get().([]byte)
-	defer pool.Put(b)
-	n, err := f.ReadAt(b, int64(idx)*2)
+	defer t.f.close()
+	e, err := t.f.elevation(idx)
 	if err != nil {
-		log.Error().Caller().Err(err).Msgf("error '%s' on read file %s at index %d\n", err.Error(), t.file, idx)
+		log.Error().Caller().Err(err).Msg("")
 		return 0
 	}
-	if n != 2 {
-		log.Error().Caller().Err(err).Msgf("error on read file %s at index %d\n", t.file, idx)
-		return 0
-	}
-	return int16(binary.BigEndian.Uint16(b))
+	return e
 }
 
 func (t *Tile) quadRowCol(row1, col1, row2, col2, row3, col3, row4, col4 int) (int16, int16, int16, int16) {
@@ -193,13 +170,29 @@ func (t *Tile) quadRowCol(row1, col1, row2, col2, row3, col3, row4, col4 int) (i
 	if t.elevations != nil {
 		return t.elevations[idx1], t.elevations[idx2], t.elevations[idx3], t.elevations[idx4]
 	}
-	f, err := os.Open(t.file)
+	err := t.f.open()
 	if err != nil {
-		log.Error().Caller().Err(err).Msgf("error on open file %s\n", t.file)
+		log.Error().Caller().Err(err).Msg("")
 		return 0, 0, 0, 0
 	}
-	defer f.Close()
-	return t.elevation(f, idx1), t.elevation(f, idx2), t.elevation(f, idx3), t.elevation(f, idx4)
+	defer t.f.close()
+	e1, err := t.f.elevation(idx1)
+	if err != nil {
+		log.Error().Caller().Err(err).Int("row", row1).Int("col", col1).Int("idx", idx1).Msg("")
+	}
+	e2, err := t.f.elevation(idx2)
+	if err != nil {
+		log.Error().Caller().Err(err).Int("row", row2).Int("col", col2).Int("idx", idx2).Msg("")
+	}
+	e3, err := t.f.elevation(idx3)
+	if err != nil {
+		log.Error().Caller().Err(err).Int("row", row3).Int("col", col3).Int("idx", idx3).Msg("")
+	}
+	e4, err := t.f.elevation(idx4)
+	if err != nil {
+		log.Error().Caller().Err(err).Int("row", row4).Int("col", col4).Int("idx", idx4).Msg("")
+	}
+	return e1, e2, e3, e4
 }
 
 func (t *Tile) interpolate(row, col float64) float64 {

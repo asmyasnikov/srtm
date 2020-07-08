@@ -4,10 +4,83 @@ import (
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/stretchr/testify/require"
 	"math"
+	"math/rand"
 	"os"
 	"path"
 	"testing"
 )
+
+var lineString *geojson.Geometry
+
+func init() {
+	coordinates := [][]float64{
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+	}
+	lineString = geojson.NewLineStringGeometry(coordinates)
+}
 
 func TestAddElevations_Point(t *testing.T) {
 	wd, err := os.Getwd()
@@ -15,7 +88,7 @@ func TestAddElevations_Point(t *testing.T) {
 	tileDir := path.Join(wd, "testdata")
 	point, err := geojson.UnmarshalGeometry([]byte(`{"type":"Point","coordinates":[-65.92054637662613,-45.02475838113942]}`))
 	require.NoError(t, err)
-	point, err = AddElevations(tileDir, true, point, false)
+	point, err = AddElevations(tileDir, true, false, point, false)
 	require.NoError(t, err)
 	require.Equal(t, geojson.GeometryPoint, point.Type)
 	require.Equal(t, 3, len(point.Point))
@@ -35,7 +108,7 @@ func TestAddElevations_LineString(t *testing.T) {
 	for _, point := range lineString.LineString {
 		require.Equal(t, 2, len(point))
 	}
-	lineString, err = AddElevations(tileDir, true, lineString, false)
+	lineString, err = AddElevations(tileDir, true, false, lineString, false)
 	require.NoError(t, err)
 	require.Equal(t, geojson.GeometryLineString, lineString.Type)
 	require.Equal(t, 3, len(lineString.LineString))
@@ -45,4 +118,32 @@ func TestAddElevations_LineString(t *testing.T) {
 	b, err := lineString.MarshalJSON()
 	require.NoError(t, err)
 	require.Equal(t, `{"type":"LineString","coordinates":[[-65.92054637662613,-45.02475838113942,24.874129324015318],[-65.92054637362612,-45.02475838114942,24.87413069507827],[-65.92053637662613,-45.02475835113942,24.87891606292618]]}`, string(b))
+}
+
+func TestAddElevations_LineString_Rand(t *testing.T) {
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	tileDir := path.Join(wd, "testdata")
+	lineString, err = AddElevations(tileDir, false, false, lineString, false)
+	require.NoError(t, err)
+}
+
+func BenchmarkAddElevations_LineString_Sequentially(b *testing.B) {
+	wd, err := os.Getwd()
+	require.NoError(b, err)
+	tileDir := path.Join(wd, "testdata")
+	for i := 0; i < b.N; i++ {
+		lineString, err = AddElevations(tileDir, false, false, lineString, false)
+		require.NoError(b, err)
+	}
+}
+
+func BenchmarkAddElevations_LineString_Parallel(b *testing.B) {
+	wd, err := os.Getwd()
+	require.NoError(b, err)
+	tileDir := path.Join(wd, "testdata")
+	for i := 0; i < b.N; i++ {
+		lineString, err = AddElevations(tileDir, false, true, lineString, false)
+		require.NoError(b, err)
+	}
 }
