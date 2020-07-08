@@ -8,10 +8,12 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 )
 
 // LRU cache of hgt files
 var cache *lru.Cache
+var mtx sync.Mutex
 
 func init() {
 	c, err := lru.NewWithEvict(1000, func(key interface{}, value interface{}) {
@@ -68,6 +70,8 @@ func tilePath(tileDir string, key string, ll LatLng) (string, os.FileInfo, error
 
 func loadTile(tileDir string, storeInMemoryMode bool, ll LatLng) (*Tile, error) {
 	key := tileKey(ll)
+	mtx.Lock()
+	defer mtx.Unlock()
 	t, ok := cache.Get(key)
 	if ok {
 		return t.(*Tile), nil
