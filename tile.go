@@ -29,6 +29,7 @@ func init() {
 	cache = c
 }
 
+// Init make initialization of cache
 func Init(lruCacheSize int) {
 	log.Info().Caller().Int("LRU cache size", lruCacheSize).Msg("")
 	_ = cache.Resize(lruCacheSize)
