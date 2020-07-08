@@ -4,6 +4,7 @@ import (
 	srtm "github.com/asmyasnikov/srtm"
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/rs/cors"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
@@ -25,6 +26,19 @@ func tileDirectory() string {
 	return v
 }
 
+func applyLogLevel() {
+	logLevel := os.Getenv("LOG_LEVEL")
+	if len(logLevel) == 0 {
+		logLevel = "error"
+	}
+	l, err := zerolog.ParseLevel(logLevel)
+	if err != nil {
+		log.Error().Caller().Err(err).Msg("")
+		return
+	}
+	zerolog.SetGlobalLevel(l)
+}
+
 func httpPort() int {
 	v := os.Getenv("HTTP_PORT")
 	if len(v) == 0 {
@@ -38,6 +52,8 @@ func httpPort() int {
 }
 
 func main() {
+	applyLogLevel()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handleAddElevations)
 
