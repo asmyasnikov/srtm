@@ -12,18 +12,15 @@ func TestGetElevation(t *testing.T) {
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	tile, err := loadTile(
-		path.Join(wd, "testdata"), LatLng{
+		path.Join(wd, "testdata"),
+		true,
+		LatLng{
 			Latitude:  -45.55457,
 			Longitude: -66.23555,
 		})
 	require.NoError(t, err)
 	require.Equal(t, 3601, tile.size)
-	require.Equal(t, func() int {
-		if storeInMemoryMode() {
-			return 3601 * 3601
-		}
-		return 0
-	}(), len(tile.elevations))
+	require.Equal(t, 3601 * 3601, len(tile.elevations))
 	require.Equal(t, (&LatLng{
 		Latitude:  -46,
 		Longitude: -67,

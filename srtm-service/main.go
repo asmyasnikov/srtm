@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // TILE_DIRECTORY is a directory of hgt-tiles
@@ -18,25 +19,15 @@ var TILE_DIRECTORY = tileDirectory()
 // HTTP_PORT - http port of web-service
 var HTTP_PORT = httpPort()
 
+// STORE_IN_MEMORY - store elevation data in memory (all hgt file)
+var STORE_IN_MEMORY = storeInMemoryMode()
+
 func tileDirectory() string {
 	v := os.Getenv("TILE_DIRECTORY")
 	if len(v) == 0 {
 		return "./data/"
 	}
 	return v
-}
-
-func applyLogLevel() {
-	logLevel := os.Getenv("LOG_LEVEL")
-	if len(logLevel) == 0 {
-		logLevel = "error"
-	}
-	l, err := zerolog.ParseLevel(logLevel)
-	if err != nil {
-		log.Error().Caller().Err(err).Msg("")
-		return
-	}
-	zerolog.SetGlobalLevel(l)
 }
 
 func httpPort() int {
@@ -51,9 +42,38 @@ func httpPort() int {
 	return p
 }
 
-func main() {
-	applyLogLevel()
+func lruCacheSize() int {
+	v := os.Getenv("LRU_CACHE_SIZE")
+	if len(v) == 0 {
+		return 1000
+	}
+	s, err := strconv.Atoi(v)
+	if err != nil {
+		return 1000
+	}
+	return s
+}
 
+func storeInMemoryMode() bool {
+	v := os.Getenv("STORE_IN_MEMORY")
+	return strings.ToLower(v) != "false"
+}
+
+func init() {
+	logLevel := os.Getenv("LOG_LEVEL")
+	if len(logLevel) == 0 {
+		logLevel = "error"
+	}
+	l, err := zerolog.ParseLevel(logLevel)
+	if err != nil {
+		log.Error().Caller().Err(err).Msg("")
+		return
+	}
+	zerolog.SetGlobalLevel(l)
+	srtm.Init(lruCacheSize())
+}
+
+func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handleAddElevations)
 
@@ -74,7 +94,7 @@ func handleAddElevations(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't unmarshall body", http.StatusBadRequest)
 		return
 	}
-	geoJson, err = srtm.AddElevations(TILE_DIRECTORY, geoJson, true)
+	geoJson, err = srtm.AddElevations(TILE_DIRECTORY, STORE_IN_MEMORY, geoJson, true)
 	if err != nil {
 		http.Error(w, "can't read body", http.StatusInternalServerError)
 		return

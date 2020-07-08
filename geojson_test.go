@@ -15,7 +15,7 @@ func TestAddElevations_Point(t *testing.T) {
 	tileDir := path.Join(wd, "testdata")
 	point, err := geojson.UnmarshalGeometry([]byte(`{"type":"Point","coordinates":[-65.92054637662613,-45.02475838113942]}`))
 	require.NoError(t, err)
-	point, err = AddElevations(tileDir, point, false)
+	point, err = AddElevations(tileDir, true, point, false)
 	require.NoError(t, err)
 	require.Equal(t, geojson.GeometryPoint, point.Type)
 	require.Equal(t, 3, len(point.Point))
@@ -35,7 +35,7 @@ func TestAddElevations_LineString(t *testing.T) {
 	for _, point := range lineString.LineString {
 		require.Equal(t, 2, len(point))
 	}
-	lineString, err = AddElevations(tileDir, lineString, false)
+	lineString, err = AddElevations(tileDir, true, lineString, false)
 	require.NoError(t, err)
 	require.Equal(t, geojson.GeometryLineString, lineString.Type)
 	require.Equal(t, 3, len(lineString.LineString))

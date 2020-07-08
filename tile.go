@@ -8,7 +8,6 @@ import (
 	"math"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -20,33 +19,19 @@ var pool = &sync.Pool{
 	New: func() interface{} { return make([]byte, 2) },
 }
 
-func lruCacheSize() int {
-	v := os.Getenv("LRU_CACHE_SIZE")
-	if len(v) == 0 {
-		return 1000
-	}
-	s, err := strconv.Atoi(v)
-	if err != nil {
-		return 1000
-	}
-	return s
-}
-
-func storeInMemoryMode() bool {
-	v := os.Getenv("STORE_IN_MEMORY")
-	return strings.ToLower(v) != "false"
-}
-
 func init() {
-	s := lruCacheSize()
-	log.Info().Caller().Int("LRU cache size", s).Msg("")
-	c, err := lru.NewWithEvict(s, func(key interface{}, value interface{}) {
+	c, err := lru.NewWithEvict(1000, func(key interface{}, value interface{}) {
 		log.Debug().Caller().Msgf("remove tile '%s' from cache\n", key.(string))
 	})
 	if err != nil {
 		panic(err)
 	}
 	cache = c
+}
+
+func Init(lruCacheSize int) {
+	log.Info().Caller().Int("LRU cache size", lruCacheSize).Msg("")
+	cache.Resize(lruCacheSize)
 }
 
 func tileKey(ll LatLng) string {
@@ -86,7 +71,7 @@ func tilePath(tileDir string, key string, ll LatLng) (string, os.FileInfo, error
 	return download(tileDir, key, ll)
 }
 
-func loadTile(tileDir string, ll LatLng) (*Tile, error) {
+func loadTile(tileDir string, storeInMemoryMode bool, ll LatLng) (*Tile, error) {
 	key := tileKey(ll)
 	t, ok := cache.Get(key)
 	if ok {
@@ -96,7 +81,7 @@ func loadTile(tileDir string, ll LatLng) (*Tile, error) {
 	if err != nil {
 		return nil, err
 	}
-	if storeInMemoryMode() || strings.HasSuffix(tPath, ".gz") {
+	if storeInMemoryMode || strings.HasSuffix(tPath, ".gz") {
 		sw, size, elevations, err := ReadFile(tPath)
 		if err != nil {
 			return nil, err
