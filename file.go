@@ -89,7 +89,7 @@ func Meta(fname string, size int64) (sw *LatLng, squareSize int, err error) {
 		return sw, squareSize, fmt.Errorf("hgt file cannot identified (only 1 arcsecond and 3 arcsecond supported, file size = %d)", size)
 	}
 	sw, err = southWest(fname)
-	return sw, squareSize, nil
+	return sw, squareSize, err
 }
 
 // sw returns the southwest point contained in a HGT file.
