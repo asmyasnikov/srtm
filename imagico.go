@@ -13,7 +13,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -26,40 +28,44 @@ var client = &http.Client{
 	Timeout: time.Second * 10,
 }
 
-func parse(r io.Reader) (string, error) {
+func parse(r io.Reader) ([]string, error) {
 	var v []interface{}
 	if err := json.NewDecoder(r).Decode(&v); err != nil {
 		log.Error().Caller().Err(err).Msg("decode json")
-		return "", err
+		return nil, err
 	}
 	if len(v) == 0 {
-		return "", fmt.Errorf("No tiles found (%+v)", v)
+		return nil, fmt.Errorf("No tiles found (%+v)", v)
 	}
-	fields, ok := v[0].(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("Cannot cast (%+v) to map[string]interface{}", v[0])
+	urls := make([]string, 0, len(v))
+	for _, f := range v {
+		fields, ok := f.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		field, ok := fields["link"]
+		if !ok {
+			continue
+		}
+		link, ok := field.(string)
+		if !ok {
+			continue
+		}
+		urls = append(urls, link)
 	}
-	field, ok := fields["link"]
-	if !ok {
-		return "", fmt.Errorf("Not found 'link' field in %+v", fields)
-	}
-	link, ok := field.(string)
-	if !ok {
-		return "", fmt.Errorf("Cannot cast (%+v) to string", field)
-	}
-	return link, nil
+	return urls, nil
 }
 
-func search(ll LatLng) (string, error) {
+func search(ll LatLng) ([]string, error) {
 	r, err := client.Get(fmt.Sprintf("http://www.imagico.de/map/dem_json.php?date=&lon=%0.7f&lat=%0.7f&lonE=%0.7f&latE=%0.7f&vf=1", ll.Longitude, ll.Latitude, ll.Longitude, ll.Latitude))
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("GET")
-		return "", err
+		return nil, err
 	}
 	if r.StatusCode != http.StatusOK {
 		err = fmt.Errorf("status code for request '%s' is not Ok (%d)", r.Request.RequestURI, r.StatusCode)
 		log.Error().Caller().Err(err).Msg("GET")
-		return "", err
+		return nil, err
 	}
 	defer r.Body.Close()
 	return parse(r.Body)
@@ -89,74 +95,89 @@ func moveHgt(sourcePath, destPath string) error {
 }
 
 func download(tileDir, key string, ll LatLng) (string, os.FileInfo, error) {
-	url, err := search(ll)
+	urls, err := search(ll)
 	if err != nil {
 		return "", nil, err
 	}
-	targetDir := path.Join(os.TempDir(), key)
-	err = os.Mkdir(targetDir, 0755)
-	if err != nil {
-		return "", nil, err
-	}
-	defer os.RemoveAll(targetDir)
-	response, err := http.Get(url)
-	if err != nil {
-		return "", nil, err
-	}
-	defer response.Body.Close()
-	b, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return "", nil, err
-	}
-	zipReader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
-	if err != nil {
-		return "", nil, err
-	}
-	extracted := make([]string, 0)
-	for _, file := range zipReader.File {
-		zippedFile, err := file.Open()
-		if err != nil {
-			log.Error().Caller().Err(err).Msg("unzip")
-		}
-		extractedFilePath := filepath.Join(
-			targetDir,
-			file.Name,
-		)
-		if file.FileInfo().IsDir() {
-			os.MkdirAll(extractedFilePath, file.Mode())
-		} else {
-			outputFile, err := os.OpenFile(
-				extractedFilePath,
-				os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-				file.Mode(),
-			)
+	wg := &sync.WaitGroup{}
+	wg.Add(len(urls))
+	extracted := make([][]string, len(urls))
+	for i, url := range urls {
+		go func(i int, url string) {
+			defer wg.Done()
+			targetDir := path.Join(os.TempDir(), key + "-" + strconv.Itoa(i))
+			err = os.Mkdir(targetDir, 0755)
 			if err != nil {
-				log.Error().Caller().Err(err).Msg("open file")
+				log.Error().Caller().Err(err).Msg("")
+				return
 			}
-			_, err = io.Copy(outputFile, zippedFile)
+			defer os.RemoveAll(targetDir)
+			response, err := http.Get(url)
 			if err != nil {
-				log.Error().Caller().Err(err).Msg("copy")
+				log.Error().Caller().Err(err).Msg("")
+				return
 			}
-			outputFile.Close()
-			if err == nil {
-				_, file := path.Split(extractedFilePath)
-				hgt := path.Join(tileDir, file)
-				extracted = append(extracted, hgt)
-				if err := moveHgt(extractedFilePath, hgt); err != nil {
-					log.Error().Caller().Err(err).Msg("move")
+			defer response.Body.Close()
+			b, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				log.Error().Caller().Err(err).Msg("")
+				return
+			}
+			zipReader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+			if err != nil {
+				log.Error().Caller().Err(err).Msg("")
+				return
+			}
+			extracted[i] = make([]string, 0)
+			for _, file := range zipReader.File {
+				zippedFile, err := file.Open()
+				if err != nil {
+					log.Error().Caller().Err(err).Msg("unzip")
 				}
+				extractedFilePath := filepath.Join(
+					targetDir,
+					file.Name,
+				)
+				if file.FileInfo().IsDir() {
+					os.MkdirAll(extractedFilePath, file.Mode())
+				} else {
+					outputFile, err := os.OpenFile(
+						extractedFilePath,
+						os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+						file.Mode(),
+					)
+					if err != nil {
+						log.Error().Caller().Err(err).Msg("open file")
+					}
+					_, err = io.Copy(outputFile, zippedFile)
+					if err != nil {
+						log.Error().Caller().Err(err).Msg("copy")
+					}
+					outputFile.Close()
+					if err == nil {
+						_, file := path.Split(extractedFilePath)
+						hgt := path.Join(tileDir, file)
+						extracted[i] = append(extracted[i], hgt)
+						if err := moveHgt(extractedFilePath, hgt); err != nil {
+							log.Error().Caller().Err(err).Msg("move")
+						}
+					}
+				}
+				zippedFile.Close()
+			}
+		}(i, url)
+	}
+	wg.Wait()
+	for i := range extracted {
+		for _, hgt := range extracted[i] {
+			if strings.Contains(hgt, key) {
+				info, err := os.Stat(hgt)
+				if err != nil {
+					return "", nil, nil
+				}
+				return hgt, info, nil
 			}
 		}
-		zippedFile.Close()
 	}
-	for _, hgt := range extracted {
-		if strings.Contains(hgt, key) {
-			info, err := os.Stat(hgt)
-			if err != nil {
-				return "", nil, nil
-			}
-			return hgt, info, nil
-		}
-	}
-	return "", nil, fmt.Errorf("tile file for key = %s is not exists (url %s -> %+v)", key, url, extracted)
+	return "", nil, fmt.Errorf("tile file for key = %s is not exists (urls %+v -> %+v)", key, urls, extracted)
 }
