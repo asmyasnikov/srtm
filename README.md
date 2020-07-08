@@ -12,9 +12,9 @@ Compare testing results (tested on Intel Core i5-4670, 16GB memory, SSD, elevati
 
 |                                                      | Memory usage at start, MB | Memory usage active phase, MB | docker slimmed image, MB | rps (siege trans/sec) |
 |------------------------------------------------------|---------------------------|-------------------------------|--------------------------|-----------------------|
-| node.js [elevation-service](https://github.com/asmyasnikov/elevation-service)                            | 29                        | 103                           | 161                      | 1226.79               |
-| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) | 2                         | 47                            | 11                       | 4676.27               |
-| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) with env `STORE_IN_MEMORY=false` | 2                         | 15                            | 11                       | 2767.19               |
+| node.js [elevation-service](https://github.com/asmyasnikov/elevation-service) | 41 | 75.53 | 161 | 852.85 |
+| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) with env `STORE_IN_MEMORY=false` and `PARALLEL=false` | 1.76 | 14.45 | 11  | 2925.49 |
+| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) with env `STORE_IN_MEMORY=false` and `PARALLEL=true` | 1.76 | 38.17 | 11 | 2280.09 |
 
 Siege run from command
 ```
