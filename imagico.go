@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -99,84 +98,75 @@ func download(tileDir, key string, ll LatLng) (string, os.FileInfo, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	wg := &sync.WaitGroup{}
-	wg.Add(len(urls))
-	extracted := make([][]string, len(urls))
+	extracted := make([]string, 0)
 	for i, url := range urls {
-		go func(i int, url string) {
-			defer wg.Done()
-			targetDir := path.Join(os.TempDir(), key+"-"+strconv.Itoa(i))
-			err = os.Mkdir(targetDir, 0755)
+		targetDir := path.Join(os.TempDir(), key+"-"+strconv.Itoa(i))
+		err = os.Mkdir(targetDir, 0755)
+		if err != nil {
+			log.Error().Caller().Err(err).Msg("")
+			continue
+		}
+		defer os.RemoveAll(targetDir)
+		response, err := http.Get(url)
+		if err != nil {
+			log.Error().Caller().Err(err).Msg("")
+			continue
+		}
+		defer response.Body.Close()
+		b, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Error().Caller().Err(err).Msg("")
+			continue
+		}
+		zipReader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+		if err != nil {
+			log.Error().Caller().Err(err).Msg("")
+			continue
+		}
+		for _, file := range zipReader.File {
+			zippedFile, err := file.Open()
 			if err != nil {
-				log.Error().Caller().Err(err).Msg("")
-				return
+				log.Error().Caller().Err(err).Msg("unzip")
 			}
-			defer os.RemoveAll(targetDir)
-			response, err := http.Get(url)
-			if err != nil {
-				log.Error().Caller().Err(err).Msg("")
-				return
-			}
-			defer response.Body.Close()
-			b, err := ioutil.ReadAll(response.Body)
-			if err != nil {
-				log.Error().Caller().Err(err).Msg("")
-				return
-			}
-			zipReader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
-			if err != nil {
-				log.Error().Caller().Err(err).Msg("")
-				return
-			}
-			extracted[i] = make([]string, 0)
-			for _, file := range zipReader.File {
-				zippedFile, err := file.Open()
-				if err != nil {
-					log.Error().Caller().Err(err).Msg("unzip")
-				}
-				extractedFilePath := filepath.Join(
-					targetDir,
-					file.Name,
+			extractedFilePath := filepath.Join(
+				targetDir,
+				file.Name,
+			)
+			if file.FileInfo().IsDir() {
+				os.MkdirAll(extractedFilePath, file.Mode())
+			} else {
+				outputFile, err := os.OpenFile(
+					extractedFilePath,
+					os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+					file.Mode(),
 				)
-				if file.FileInfo().IsDir() {
-					os.MkdirAll(extractedFilePath, file.Mode())
-				} else {
-					outputFile, err := os.OpenFile(
-						extractedFilePath,
-						os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-						file.Mode(),
-					)
-					if err != nil {
-						log.Error().Caller().Err(err).Msg("open file")
-					}
-					_, err = io.Copy(outputFile, zippedFile)
-					if err != nil {
-						log.Error().Caller().Err(err).Msg("copy")
-					}
-					outputFile.Close()
-					if err == nil {
-						_, file := path.Split(extractedFilePath)
-						hgt := path.Join(tileDir, file)
-						extracted[i] = append(extracted[i], hgt)
-						if err := moveHgt(extractedFilePath, hgt); err != nil {
-							log.Error().Caller().Err(err).Msg("move")
-						}
-					}
-				}
-				zippedFile.Close()
-			}
-		}(i, url)
-	}
-	wg.Wait()
-	for i := range extracted {
-		for _, hgt := range extracted[i] {
-			if strings.Contains(hgt, key) {
-				info, err := os.Stat(hgt)
 				if err != nil {
-					return "", nil, nil
+					log.Error().Caller().Err(err).Msg("open file")
 				}
-				return hgt, info, nil
+				_, err = io.Copy(outputFile, zippedFile)
+				if err != nil {
+					log.Error().Caller().Err(err).Msg("copy")
+				}
+				outputFile.Close()
+				if err == nil {
+					_, file := path.Split(extractedFilePath)
+					hgt := path.Join(tileDir, file)
+					extracted = append(extracted, hgt)
+					if err := moveHgt(extractedFilePath, hgt); err != nil {
+						log.Error().Caller().Err(err).Msg("move")
+					}
+				}
 			}
+			zippedFile.Close()
+		}
+	}
+	for _, hgt := range extracted {
+		if strings.Contains(hgt, key) {
+			info, err := os.Stat(hgt)
+			if err != nil {
+				return "", nil, nil
+			}
+			return hgt, info, nil
 		}
 	}
 	return "", nil, fmt.Errorf("tile file for key = %s is not exists (urls %+v -> %+v)", key, urls, extracted)
