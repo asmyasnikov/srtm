@@ -1,12 +1,10 @@
-FROM amd64/golang:latest AS build
+FROM golang:latest AS build
 
-RUN CGO_ENABLED=0 go get -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
+RUN CGO_ENABLED=0 GOARCH=amd64 go get -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
 
-ARG ARCH
+FROM amd64/busybox
 
-FROM scratch
-
-COPY --from=build /go/bin/srtm-service /srtm-service
+COPY --from=build /go/bin/srtm-service /usr/local/bin/srtm-service
 
 ENV HTTP_PORT=80
 ENV TILE_DIRECTORY=/data
@@ -15,6 +13,6 @@ ENV STORE_IN_MEMORY=false
 
 EXPOSE 80
 
-ENTRYPOINT ["/srtm-service"]
+ENTRYPOINT ["/usr/local/bin/srtm-service"]
 
 CMD []
