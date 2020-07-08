@@ -14,7 +14,7 @@ import (
 var cache *lru.Cache
 
 func init() {
-	c, err := lru.NewWithEvict(1, func(key interface{}, value interface{}) {
+	c, err := lru.NewWithEvict(1000, func(key interface{}, value interface{}) {
 		log.Debug().Caller().Msgf("remove tile '%s' from cache\n", key.(string))
 	})
 	if err != nil {
