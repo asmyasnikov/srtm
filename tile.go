@@ -31,7 +31,7 @@ func init() {
 
 func Init(lruCacheSize int) {
 	log.Info().Caller().Int("LRU cache size", lruCacheSize).Msg("")
-	cache.Resize(lruCacheSize)
+	_ = cache.Resize(lruCacheSize)
 }
 
 func tileKey(ll LatLng) string {
