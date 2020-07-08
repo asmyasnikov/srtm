@@ -20,7 +20,7 @@ func TestGetElevation(t *testing.T) {
 		})
 	require.NoError(t, err)
 	require.Equal(t, 3601, tile.size)
-	require.Equal(t, 3601 * 3601, len(tile.elevations))
+	require.Equal(t, 3601*3601, len(tile.elevations))
 	require.Equal(t, (&LatLng{
 		Latitude:  -46,
 		Longitude: -67,
