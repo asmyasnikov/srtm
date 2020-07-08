@@ -1,10 +1,12 @@
 FROM golang:latest AS build
 
-RUN CGO_ENABLED=0 GOARCH=amd64 go get -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
+WORKDIR /build
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /build/srtm-service github.com/asmyasnikov/srtm/srtm-service
 
 FROM amd64/busybox
 
-COPY --from=build /go/bin/srtm-service /usr/local/bin/srtm-service
+COPY --from=build /build/srtm-service /usr/local/bin/srtm-service
 
 ENV HTTP_PORT=80
 ENV TILE_DIRECTORY=/data
