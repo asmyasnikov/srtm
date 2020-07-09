@@ -13,6 +13,7 @@ type FileReader struct {
 	f    *os.File
 	m    *sync.Mutex
 	c    int64
+	p    *sync.Pool
 }
 
 func newFileReader(tPath string) *FileReader {
@@ -21,6 +22,11 @@ func newFileReader(tPath string) *FileReader {
 		f:    nil,
 		m:    &sync.Mutex{},
 		c:    0,
+		p:    &sync.Pool{
+			New: func() interface{} {
+				return make([]byte, 2)
+			},
+		},
 	}
 }
 
@@ -48,7 +54,11 @@ func (f *FileReader) close() error {
 }
 
 func (f *FileReader) elevation(idx int) (int16, error) {
-	b := make([]byte, 2)
+	b, ok := f.p.Get().([]byte)
+	if !ok {
+		return 0, fmt.Errorf("error on get byte slice from pool in file reader %s", f.name)
+	}
+	defer f.p.Put(b)
 	n, err := f.f.ReadAt(b, int64(idx)*2)
 	if err != nil {
 		return 0, err
