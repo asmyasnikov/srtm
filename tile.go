@@ -29,7 +29,7 @@ func init() {
 
 // Init make initialization of cache
 func Init(lruCacheSize int, tileDir string, storeInMemoryMode, parallelMode bool) {
-	log.Info().Caller().Int("LRU cache size", lruCacheSize).Msg("")
+	log.Info().Caller().Int("LRU cache size", lruCacheSize).Bool("store in memory", storeInMemoryMode).Bool("parallel", parallelMode).Msg("")
 	_ = cache.Resize(lruCacheSize)
 	tileDirectory = tileDir
 	storeInMemory = storeInMemoryMode
