@@ -3,6 +3,7 @@ package main
 import (
 	srtm "github.com/asmyasnikov/srtm"
 	geojson "github.com/paulmach/go.geojson"
+	_ "net/http/pprof"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -55,6 +56,11 @@ func parallel() bool {
 	return strings.ToLower(v) != "false"
 }
 
+func debug() bool {
+	v := os.Getenv("DEBUG")
+	return strings.ToLower(v) == "true"
+}
+
 func init() {
 	logLevel := os.Getenv("LOG_LEVEL")
 	if len(logLevel) == 0 {
@@ -70,6 +76,12 @@ func init() {
 }
 
 func main() {
+	if debug() {
+		go func() {
+			http.ListenAndServe(":6060", nil)
+		}()
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handleAddElevations)
 
