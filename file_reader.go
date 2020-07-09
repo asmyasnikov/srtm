@@ -8,10 +8,6 @@ import (
 	"sync/atomic"
 )
 
-var pool = &sync.Pool{
-	New: func() interface{} { return make([]byte, 2) },
-}
-
 type FileReader struct {
 	name string
 	f    *os.File
@@ -52,8 +48,7 @@ func (f *FileReader) close() error {
 }
 
 func (f *FileReader) elevation(idx int) (int16, error) {
-	b := pool.Get().([]byte)
-	defer pool.Put(b)
+	b := make([]byte, 2)
 	n, err := f.f.ReadAt(b, int64(idx)*2)
 	if err != nil {
 		return 0, err
