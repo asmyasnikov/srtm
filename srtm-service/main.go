@@ -97,8 +97,8 @@ func handleAddElevations(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't read body", http.StatusBadRequest)
 		return
 	}
-	geoJson, err := geojson.UnmarshalGeometry(body)
-	if err != nil {
+	var geoJson = &geojson.Geometry{}
+	if err := geoJson.UnmarshalJSON(body); err != nil {
 		http.Error(w, "can't unmarshall body", http.StatusBadRequest)
 		return
 	}
