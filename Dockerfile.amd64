@@ -1,6 +1,6 @@
 FROM golang:latest AS build
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go get -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go get -v -ldflags="-w -s" github.com/asmyasnikov/srtm/srtm-service
 
 FROM amd64/busybox
 
