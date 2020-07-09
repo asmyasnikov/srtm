@@ -15,7 +15,7 @@ var cache *lru.Cache
 var mtx sync.Mutex
 var tileDirectory = "./data"
 var storeInMemory = false
-var parallel = false
+var parallel = true
 
 func init() {
 	c, err := lru.NewWithEvict(1000, func(key interface{}, value interface{}) {
@@ -150,25 +150,6 @@ func (t *Tile) normalize(v, max int, description string) int {
 		return max
 	}
 	return v
-}
-
-func (t *Tile) rowCol(row, col int, description string) int16 {
-	idx := (t.size-t.normalize(row, (t.size-1), "row "+description)-1)*t.size + t.normalize(col, t.size, "col "+description)
-	if t.elevations != nil {
-		return t.elevations[idx]
-	}
-	err := t.f.open()
-	if err != nil {
-		log.Error().Caller().Err(err).Msg("")
-		return 0
-	}
-	defer t.f.close()
-	e, err := t.f.elevation(idx)
-	if err != nil {
-		log.Error().Caller().Err(err).Msg("")
-		return 0
-	}
-	return e
 }
 
 func (t *Tile) quadRowCol(row1, col1, row2, col2, row3, col3, row4, col4 int) (int16, int16, int16, int16) {

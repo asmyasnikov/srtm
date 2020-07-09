@@ -3,12 +3,12 @@ package main
 import (
 	srtm "github.com/asmyasnikov/srtm"
 	geojson "github.com/paulmach/go.geojson"
-	_ "net/http/pprof"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strconv"
 	"strings"
