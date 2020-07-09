@@ -3,7 +3,6 @@ package srtm
 import (
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/rs/zerolog/log"
-	"sync"
 )
 
 // AddElevation returns point with 3 coordinates: [longitude, latitude, elevation]
@@ -41,85 +40,44 @@ func AddElevations(geoJson *geojson.Geometry, skipErrors bool) (*geojson.Geometr
 		geoJson.Point = point
 		return geoJson, nil
 	case geojson.GeometryLineString:
-		wg := &sync.WaitGroup{}
-		wg.Add(len(geoJson.LineString))
-		processor := func(i int) {
-			defer wg.Done()
+		for i := range geoJson.LineString {
 			point, err := AddElevation(geoJson.LineString[i])
 			if err != nil && !skipErrors {
 				log.Error().Caller().Err(err).Msg("")
 			}
 			geoJson.LineString[i] = point
 		}
-		for i := range geoJson.LineString {
-			if parallel {
-				go processor(i)
-			} else {
-				processor(i)
-			}
-		}
-		wg.Wait()
 		return geoJson, nil
 	case geojson.GeometryMultiPoint:
-		wg := &sync.WaitGroup{}
-		wg.Add(len(geoJson.MultiPoint))
-		processor := func(i int) {
+		for i := range geoJson.MultiPoint {
 			point, err := AddElevation(geoJson.MultiPoint[i])
 			if err != nil && !skipErrors {
 				log.Error().Caller().Err(err).Msg("")
 			}
 			geoJson.MultiPoint[i] = point
 		}
-		for i := range geoJson.MultiPoint {
-			if parallel {
-				go processor(i)
-			} else {
-				processor(i)
-			}
-		}
-		wg.Wait()
 		return geoJson, nil
 	case geojson.GeometryPolygon:
-		wg := &sync.WaitGroup{}
-		processor := func(i, j int) {
-			point, err := AddElevation(geoJson.Polygon[i][j])
-			if err != nil && !skipErrors {
-				log.Error().Caller().Err(err).Msg("")
-			}
-			geoJson.Polygon[i][j] = point
-		}
 		for i := range geoJson.Polygon {
-			wg.Add(len(geoJson.Polygon[i]))
 			for j := range geoJson.Polygon[i] {
-				if parallel {
-					go processor(i, j)
-				} else {
-					processor(i, j)
+				point, err := AddElevation(geoJson.Polygon[i][j])
+				if err != nil && !skipErrors {
+					log.Error().Caller().Err(err).Msg("")
 				}
+				geoJson.Polygon[i][j] = point
 			}
 		}
-		wg.Wait()
 		return geoJson, nil
 	case geojson.GeometryMultiLineString:
-		wg := &sync.WaitGroup{}
-		processor := func(i, j int) {
-			point, err := AddElevation(geoJson.MultiLineString[i][j])
-			if err != nil && !skipErrors {
-				log.Error().Caller().Err(err).Msg("")
-			}
-			geoJson.MultiLineString[i][j] = point
-		}
 		for i := range geoJson.MultiLineString {
-			wg.Add(len(geoJson.MultiLineString[i]))
 			for j := range geoJson.MultiLineString[i] {
-				if parallel {
-					go processor(i, j)
-				} else {
-					processor(i, j)
+				point, err := AddElevation(geoJson.MultiLineString[i][j])
+				if err != nil && !skipErrors {
+					log.Error().Caller().Err(err).Msg("")
 				}
+				geoJson.MultiLineString[i][j] = point
 			}
 		}
-		wg.Wait()
 		return geoJson, nil
 	default:
 		return geoJson, nil
