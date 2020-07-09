@@ -19,7 +19,7 @@ var parallel = true
 
 func init() {
 	c, err := lru.NewWithEvict(1000, func(key interface{}, value interface{}) {
-		log.Debug().Caller().Msgf("remove tile '%s' from cache\n", key.(string))
+		log.Debug().Caller().Msgf("remove tile '%s' from cache", key.(string))
 	})
 	if err != nil {
 		panic(err)
@@ -97,8 +97,9 @@ func loadTile(ll LatLng) (*Tile, error) {
 			elevations: elevations,
 		}
 		if evicted := cache.Add(key, t); evicted {
-			log.Error().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest\n", key)
+			log.Error().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest", key)
 		}
+		log.Debug().Caller().Str("tile path", tPath).Msg("load tile to memory")
 		return t.(*Tile), nil
 	}
 	sw, size, err := Meta(tPath, info.Size())
@@ -112,8 +113,9 @@ func loadTile(ll LatLng) (*Tile, error) {
 		elevations: nil,
 	}
 	if evicted := cache.Add(key, t); evicted {
-		log.Debug().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest\n", key)
+		log.Debug().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest", key)
 	}
+	log.Debug().Caller().Str("tile path", tPath).Msg("lazy load tile")
 	return t.(*Tile), nil
 }
 
@@ -142,11 +144,11 @@ func avg(v1, v2, f float64) float64 {
 
 func (t *Tile) normalize(v, max int, description string) int {
 	if v < 0 {
-		log.Error().Caller().Msgf("normalize: error value %d of %s\n", v, description)
+		log.Error().Caller().Msgf("normalize: error value %d of %s", v, description)
 		return 0
 	}
 	if v > max {
-		log.Error().Caller().Msgf("normalize: error value %d of %s\n", v, description)
+		log.Error().Caller().Msgf("normalize: error value %d of %s", v, description)
 		return max
 	}
 	return v

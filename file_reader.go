@@ -54,7 +54,7 @@ func (f *FileReader) elevation(idx int) (int16, error) {
 		return 0, err
 	}
 	if n != 2 {
-		return 0, fmt.Errorf("error on read file %s at index %d\n", f.name, idx)
+		return 0, fmt.Errorf("error on read file %s at index %d", f.name, idx)
 	}
 	return int16(binary.BigEndian.Uint16(b)), nil
 }
