@@ -51,11 +51,6 @@ func storeInMemoryMode() bool {
 	return strings.ToLower(v) != "false"
 }
 
-func parallel() bool {
-	v := os.Getenv("PARALLEL")
-	return strings.ToLower(v) != "false"
-}
-
 func debug() bool {
 	v := os.Getenv("DEBUG")
 	return strings.ToLower(v) == "true"
@@ -72,7 +67,7 @@ func init() {
 		return
 	}
 	zerolog.SetGlobalLevel(l)
-	srtm.Init(lruCacheSize(), tileDirectory(), storeInMemoryMode(), parallel())
+	srtm.Init(lruCacheSize(), tileDirectory(), storeInMemoryMode())
 }
 
 func main() {

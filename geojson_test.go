@@ -123,19 +123,3 @@ func TestAddElevations_LineString_Rand(t *testing.T) {
 	_, err := AddElevations(lineString, false)
 	require.NoError(t, err)
 }
-
-func BenchmarkAddElevations_LineString_Sequentially(b *testing.B) {
-	parallel = false
-	for i := 0; i < b.N; i++ {
-		_, err := AddElevations(lineString, false)
-		require.NoError(b, err)
-	}
-}
-
-func BenchmarkAddElevations_LineString_Parallel(b *testing.B) {
-	parallel = true
-	for i := 0; i < b.N; i++ {
-		_, err := AddElevations(lineString, false)
-		require.NoError(b, err)
-	}
-}

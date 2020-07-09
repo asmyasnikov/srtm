@@ -8,13 +8,13 @@ Go library for reading [Shuttle Radar Topography Mission](https://en.wikipedia.o
 
 Written on pure golang. Based on [github.com/jda/srtm](https://github.com/jda/srtm) and inspired [geojson-elevation](https://github.com/perliedman/geojson-elevation) and [node-hgt](https://github.com/perliedman/node-hgt)
 
-Compare testing results (tested on Intel Core i5-4670, 16GB memory, SSD, elevation/srtm services run inside docker with port forwarding). 
+Compare testing results (tested on Intel Core i3-7100, 8GB memory, SSD, elevation/srtm services run inside docker with port forwarding). 
 
 |                                                      | Memory usage at start, MB | Memory usage active phase, MB | docker slimmed image, MB | rps (siege trans/sec) |
 |------------------------------------------------------|---------------------------|-------------------------------|--------------------------|-----------------------|
-| node.js [elevation-service](https://github.com/asmyasnikov/elevation-service) | 41 | 75.53 | 161 | 852.85 |
-| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) with env `STORE_IN_MEMORY=false` and `PARALLEL=false` | 1.76 | 14.45 | 11  | 2925.49 |
-| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) with env `STORE_IN_MEMORY=false` and `PARALLEL=true` | 1.76 | 38.17 | 11 | 2280.09 |
+| node.js [elevation-service](https://github.com/asmyasnikov/elevation-service) | 40.44 | 77.41 | 161 | 837.61 |
+| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) with env `STORE_IN_MEMORY=true` | 1.76 | 49.09 | 11  | 3214.50 |
+| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) with env `STORE_IN_MEMORY=false` | 1.76 | 17.22 | 11 | 2816.02 |
 
 Siege run from command
 ```
@@ -31,7 +31,7 @@ Environment variables:
  - `TILE_DIRECTORY` - directory of hgt tiles (default `./data/`)
  - `LRU_CACHE_SIZE` - LRU cache size (default 1000)
  - `STORE_IN_MEMORY` - boolean flag. If `false` hgt tiles not preliminary reading into memory, read few bytes at AddElevation phase. if `true` - all contents read preliminary into memory and store for future usage. (default `true`)
- - `PARALLEL` - calc elevation for each point in geojson in different goroutines 
+ - `LOG_LEVEL` - logging level 
 
 Install and usage:
  - from sources 
@@ -43,7 +43,7 @@ Install and usage:
  - from docker
 ```
 # mkdir data
-# docker run -itd --rm -v $(pwd)/data/:/data/ -p 80:80 -e HTTP_PORT=80 -e TILE_DIRECTORY=/data -e LRU_CACHE_SIZE=1000 -e STORE_IN_MEMORY=false -e PARALLEL=true amyasnikov/srtm-service:latest
+# docker run -itd --rm -v $(pwd)/data/:/data/ -p 80:80 -e HTTP_PORT=80 -e TILE_DIRECTORY=/data -e LRU_CACHE_SIZE=1000 -e STORE_IN_MEMORY=false -e LOG_LEVEL=debug amyasnikov/srtm-service:latest
 ```
  - in sources
 ```go

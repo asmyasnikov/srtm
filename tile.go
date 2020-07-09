@@ -15,7 +15,6 @@ var cache *lru.Cache
 var mtx sync.Mutex
 var tileDirectory = "./data"
 var storeInMemory = false
-var parallel = true
 
 func init() {
 	c, err := lru.NewWithEvict(1000, func(key interface{}, value interface{}) {
@@ -28,12 +27,11 @@ func init() {
 }
 
 // Init make initialization of cache
-func Init(lruCacheSize int, tileDir string, storeInMemoryMode, parallelMode bool) {
-	log.Info().Caller().Int("LRU cache size", lruCacheSize).Bool("store in memory", storeInMemoryMode).Bool("parallel", parallelMode).Msg("")
+func Init(lruCacheSize int, tileDir string, storeInMemoryMode bool) {
+	log.Info().Caller().Int("LRU cache size", lruCacheSize).Bool("store in memory", storeInMemoryMode).Msg("")
 	_ = cache.Resize(lruCacheSize)
 	tileDirectory = tileDir
 	storeInMemory = storeInMemoryMode
-	parallel = parallelMode
 }
 
 func tileKey(ll LatLng) string {
