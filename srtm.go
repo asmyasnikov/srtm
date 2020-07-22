@@ -40,6 +40,7 @@ func Init(lruCacheSize int, tileDir string) (*SRTM, error) {
 	}, nil
 }
 
+// Destroy clean all internal data
 func (d *SRTM) Destroy() {
 	d.mtx.Lock()
 	d.cache.Purge()
