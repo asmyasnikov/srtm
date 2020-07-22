@@ -1,6 +1,7 @@
 package srtm
 
 import (
+	"encoding/binary"
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/rs/zerolog/log"
@@ -19,6 +20,16 @@ var storeInMemory = false
 func init() {
 	c, err := lru.NewWithEvict(1000, func(key interface{}, value interface{}) {
 		log.Debug().Caller().Msgf("remove tile '%s' from cache", key.(string))
+		tile, ok := value.(*Tile)
+		if !ok {
+			log.Error().Caller().Msgf("cache value for key '%s' is not a tile (%+v)", key, value)
+			return
+		}
+		if tile.f != nil {
+			if err := tile.f.Close(); err != nil {
+				log.Error().Caller().Err(err).Msg("")
+			}
+		}
 	})
 	if err != nil {
 		panic(err)
@@ -104,8 +115,12 @@ func loadTile(ll LatLng) (*Tile, error) {
 	if err != nil {
 		return nil, err
 	}
+	file, err := os.Open(tPath)
+	if err != nil {
+		return nil, err
+	}
 	t = &Tile{
-		f:          newFileReader(tPath),
+		f:          file,
 		sw:         sw,
 		size:       size,
 		elevations: nil,
@@ -119,7 +134,7 @@ func loadTile(ll LatLng) (*Tile, error) {
 
 // Tile struct contains hgt-tile meta-data and raw elevations slice
 type Tile struct {
-	f          *FileReader
+	f          *os.File
 	sw         *LatLng
 	size       int
 	elevations []int16
@@ -152,6 +167,18 @@ func (t *Tile) normalize(v, max int, description string) int {
 	return v
 }
 
+func (t *Tile) elevation(idx int) (int16, error) {
+	b := make([]byte, 2)
+	n, err := t.f.ReadAt(b, int64(idx)*2)
+	if err != nil {
+		return 0, err
+	}
+	if n != 2 {
+		return 0, fmt.Errorf("error on read file %s at index %d", t.f.Name(), idx)
+	}
+	return int16(binary.BigEndian.Uint16(b)), nil
+}
+
 func (t *Tile) quadRowCol(row1, col1, row2, col2, row3, col3, row4, col4 int) (int16, int16, int16, int16) {
 	idx1 := (t.size-t.normalize(row1, (t.size-1), "row idx1")-1)*t.size + t.normalize(col1, t.size, "col idx1")
 	idx2 := (t.size-t.normalize(row2, (t.size-1), "row idx2")-1)*t.size + t.normalize(col2, t.size, "col idx2")
@@ -160,25 +187,19 @@ func (t *Tile) quadRowCol(row1, col1, row2, col2, row3, col3, row4, col4 int) (i
 	if t.elevations != nil {
 		return t.elevations[idx1], t.elevations[idx2], t.elevations[idx3], t.elevations[idx4]
 	}
-	err := t.f.open()
-	if err != nil {
-		log.Error().Caller().Err(err).Msg("")
-		return 0, 0, 0, 0
-	}
-	defer t.f.close()
-	e1, err := t.f.elevation(idx1)
+	e1, err := t.elevation(idx1)
 	if err != nil {
 		log.Error().Caller().Err(err).Int("row", row1).Int("col", col1).Int("idx", idx1).Msg("")
 	}
-	e2, err := t.f.elevation(idx2)
+	e2, err := t.elevation(idx2)
 	if err != nil {
 		log.Error().Caller().Err(err).Int("row", row2).Int("col", col2).Int("idx", idx2).Msg("")
 	}
-	e3, err := t.f.elevation(idx3)
+	e3, err := t.elevation(idx3)
 	if err != nil {
 		log.Error().Caller().Err(err).Int("row", row3).Int("col", col3).Int("idx", idx3).Msg("")
 	}
-	e4, err := t.f.elevation(idx4)
+	e4, err := t.elevation(idx4)
 	if err != nil {
 		log.Error().Caller().Err(err).Int("row", row4).Int("col", col4).Int("idx", idx4).Msg("")
 	}
