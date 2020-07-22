@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
-	_ "net/http/pprof"
+	"net/http/pprof"
 	"os"
 	"strconv"
 	"strings"
@@ -71,14 +71,15 @@ func init() {
 }
 
 func main() {
-	if debug() {
-		go func() {
-			http.ListenAndServe(":6060", nil)
-		}()
-	}
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handleAddElevations)
+	if debug() {
+		mux.HandleFunc("/debug/pprof/", pprof.Index)
+		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	}
 
 	handler := cors.Default().Handler(mux)
 	if err := http.ListenAndServe(":"+strconv.Itoa(httpPort()), handler); err != nil {
