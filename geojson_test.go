@@ -5,8 +5,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"math"
 	"math/rand"
-	"os"
-	"path"
 	"testing"
 )
 
@@ -80,17 +78,15 @@ func init() {
 		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
 	}
 	lineString = geojson.NewLineStringGeometry(coordinates)
-	wd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	tileDirectory = path.Join(wd, "testdata")
 }
 
 func TestAddElevations_Point(t *testing.T) {
+	data, err := Init(1, "testdata")
+	require.NoError(t, err)
+	defer data.Destroy()
 	point, err := geojson.UnmarshalGeometry([]byte(`{"type":"Point","coordinates":[-65.92054637662613,-45.02475838113942]}`))
 	require.NoError(t, err)
-	point, err = AddElevations(point, false)
+	err = data.AddElevations(point, false)
 	require.NoError(t, err)
 	require.Equal(t, geojson.GeometryPoint, point.Type)
 	require.Equal(t, 3, len(point.Point))
@@ -101,13 +97,16 @@ func TestAddElevations_Point(t *testing.T) {
 }
 
 func TestAddElevations_LineString(t *testing.T) {
+	data, err := Init(1, "testdata")
+	require.NoError(t, err)
+	defer data.Destroy()
 	lineString, err := geojson.UnmarshalGeometry([]byte(`{"type":"LineString","coordinates":[[-65.92054637662613,-45.02475838113942],[-65.92054637362613,-45.02475838114942],[-65.92053637662613,-45.02475835113942]]}`))
 	require.NoError(t, err)
 	require.Equal(t, 3, len(lineString.LineString))
 	for _, point := range lineString.LineString {
 		require.Equal(t, 2, len(point))
 	}
-	lineString, err = AddElevations(lineString, false)
+	err = data.AddElevations(lineString, false)
 	require.NoError(t, err)
 	require.Equal(t, geojson.GeometryLineString, lineString.Type)
 	require.Equal(t, 3, len(lineString.LineString))
@@ -120,6 +119,8 @@ func TestAddElevations_LineString(t *testing.T) {
 }
 
 func TestAddElevations_LineString_Rand(t *testing.T) {
-	_, err := AddElevations(lineString, false)
+	data, err := Init(1, "testdata")
 	require.NoError(t, err)
+	defer data.Destroy()
+	require.NoError(t, data.AddElevations(lineString, false))
 }

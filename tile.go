@@ -3,47 +3,12 @@ package srtm
 import (
 	"encoding/binary"
 	"fmt"
-	lru "github.com/hashicorp/golang-lru"
 	"github.com/rs/zerolog/log"
 	"math"
 	"os"
 	"path"
 	"strings"
-	"sync"
 )
-
-var cache *lru.Cache
-var mtx sync.Mutex
-var tileDirectory = "./data"
-var storeInMemory = false
-
-func init() {
-	c, err := lru.NewWithEvict(1000, func(key interface{}, value interface{}) {
-		log.Debug().Caller().Msgf("remove tile '%s' from cache", key.(string))
-		tile, ok := value.(*Tile)
-		if !ok {
-			log.Error().Caller().Msgf("cache value for key '%s' is not a tile (%+v)", key, value)
-			return
-		}
-		if tile.f != nil {
-			if err := tile.f.Close(); err != nil {
-				log.Error().Caller().Err(err).Msg("")
-			}
-		}
-	})
-	if err != nil {
-		panic(err)
-	}
-	cache = c
-}
-
-// Init make initialization of cache
-func Init(lruCacheSize int, tileDir string, storeInMemoryMode bool) {
-	log.Info().Caller().Int("LRU cache size", lruCacheSize).Bool("store in memory", storeInMemoryMode).Msg("")
-	_ = cache.Resize(lruCacheSize)
-	tileDirectory = tileDir
-	storeInMemory = storeInMemoryMode
-}
 
 func tileKey(ll LatLng) string {
 	return fmt.Sprintf("%s%02d%s%03d",
@@ -82,19 +47,19 @@ func tilePath(tileDir string, key string, ll LatLng) (string, os.FileInfo, error
 	return download(tileDir, key, ll)
 }
 
-func loadTile(ll LatLng) (*Tile, error) {
+func (d *SRTM) loadTile(ll LatLng) (*Tile, error) {
 	key := tileKey(ll)
-	mtx.Lock()
-	defer mtx.Unlock()
-	t, ok := cache.Get(key)
+	d.mtx.Lock()
+	defer d.mtx.Unlock()
+	t, ok := d.cache.Get(key)
 	if ok {
 		return t.(*Tile), nil
 	}
-	tPath, info, err := tilePath(tileDirectory, key, ll)
+	tPath, info, err := tilePath(d.tileDirectory, key, ll)
 	if err != nil {
 		return nil, err
 	}
-	if storeInMemory || strings.HasSuffix(tPath, ".gz") {
+	if strings.HasSuffix(tPath, ".gz") {
 		sw, size, elevations, err := ReadFile(tPath)
 		if err != nil {
 			return nil, err
@@ -105,7 +70,7 @@ func loadTile(ll LatLng) (*Tile, error) {
 			size:       size,
 			elevations: elevations,
 		}
-		if evicted := cache.Add(key, t); evicted {
+		if evicted := d.cache.Add(key, t); evicted {
 			log.Error().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest", key)
 		}
 		log.Debug().Caller().Str("tile path", tPath).Msg("load tile to memory")
@@ -125,7 +90,7 @@ func loadTile(ll LatLng) (*Tile, error) {
 		size:       size,
 		elevations: nil,
 	}
-	if evicted := cache.Add(key, t); evicted {
+	if evicted := d.cache.Add(key, t); evicted {
 		log.Debug().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest", key)
 	}
 	log.Debug().Caller().Str("tile path", tPath).Msg("lazy load tile")

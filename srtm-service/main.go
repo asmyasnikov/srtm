@@ -1,7 +1,7 @@
 package main
 
 import (
-	srtm "github.com/asmyasnikov/srtm"
+	"github.com/asmyasnikov/srtm"
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
@@ -46,11 +46,6 @@ func lruCacheSize() int {
 	return s
 }
 
-func storeInMemoryMode() bool {
-	v := os.Getenv("STORE_IN_MEMORY")
-	return strings.ToLower(v) != "false"
-}
-
 func debug() bool {
 	v := os.Getenv("DEBUG")
 	return strings.ToLower(v) == "true"
@@ -67,12 +62,19 @@ func init() {
 		return
 	}
 	zerolog.SetGlobalLevel(l)
-	srtm.Init(lruCacheSize(), tileDirectory(), storeInMemoryMode())
 }
 
 func main() {
+	data, err := srtm.Init(lruCacheSize(), tileDirectory())
+	if err != nil {
+		log.Error().Caller().Err(err).Msg("")
+		return
+	}
+	defer data.Destroy()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", handleAddElevations)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		handleAddElevations(w, r, data)
+	})
 	if debug() {
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
 		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -80,32 +82,30 @@ func main() {
 		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	}
-
 	handler := cors.Default().Handler(mux)
 	if err := http.ListenAndServe(":"+strconv.Itoa(httpPort()), handler); err != nil {
 		log.Error().Caller().Err(err).Msg("")
 	}
 }
 
-func handleAddElevations(w http.ResponseWriter, r *http.Request) {
+func handleAddElevations(w http.ResponseWriter, r *http.Request, data *srtm.SRTM) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "can't read body", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var geoJson = &geojson.Geometry{}
+	var geoJson = geojson.Geometry{}
 	if err := geoJson.UnmarshalJSON(body); err != nil {
-		http.Error(w, "can't unmarshall body", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	geoJson, err = srtm.AddElevations(geoJson, true)
-	if err != nil {
-		http.Error(w, "can't read body", http.StatusInternalServerError)
+	if err := data.AddElevations(&geoJson, true); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	body, err = geoJson.MarshalJSON()
 	if err != nil {
-		http.Error(w, "can't read body", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

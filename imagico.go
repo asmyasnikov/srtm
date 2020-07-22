@@ -18,13 +18,15 @@ import (
 	"time"
 )
 
-var client = &http.Client{
-	Transport: &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
+func client() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
 		},
-	},
-	Timeout: time.Second * 10,
+		Timeout: time.Second * 10,
+	}
 }
 
 func parse(r io.Reader) ([]string, error) {
@@ -56,7 +58,7 @@ func parse(r io.Reader) ([]string, error) {
 }
 
 func search(ll LatLng) ([]string, error) {
-	r, err := client.Get(fmt.Sprintf("http://www.imagico.de/map/dem_json.php?date=&lon=%0.7f&lat=%0.7f&lonE=%0.7f&latE=%0.7f&vf=1", ll.Longitude, ll.Latitude, ll.Longitude, ll.Latitude))
+	r, err := client().Get(fmt.Sprintf("http://www.imagico.de/map/dem_json.php?date=&lon=%0.7f&lat=%0.7f&lonE=%0.7f&latE=%0.7f&vf=1", ll.Longitude, ll.Latitude, ll.Longitude, ll.Latitude))
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("GET")
 		return nil, err

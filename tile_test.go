@@ -3,21 +3,14 @@ package srtm
 import (
 	"github.com/stretchr/testify/require"
 	"math"
-	"os"
-	"path"
 	"testing"
 )
 
-func init() {
-	wd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	tileDirectory = path.Join(wd, "testdata")
-}
-
 func TestGetElevation(t *testing.T) {
-	tile, err := loadTile(
+	data, err := Init(1, "testdata")
+	require.NoError(t, err)
+	defer data.Destroy()
+	tile, err := data.loadTile(
 		LatLng{
 			Latitude:  -45.55457,
 			Longitude: -65.23555,
