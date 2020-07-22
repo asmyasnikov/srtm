@@ -8,8 +8,8 @@ import (
 
 // SRTM is a struct contains all internal data
 type SRTM struct {
-	cache *lru.Cache
-	mtx sync.Mutex
+	cache         *lru.Cache
+	mtx           sync.Mutex
 	tileDirectory string
 }
 
@@ -34,8 +34,8 @@ func Init(lruCacheSize int, tileDir string) (*SRTM, error) {
 	}
 	log.Info().Caller().Int("LRU cache size", lruCacheSize).Str("tile dir", tileDir).Msg("")
 	return &SRTM{
-		cache: c,
-		mtx: sync.Mutex{},
+		cache:         c,
+		mtx:           sync.Mutex{},
 		tileDirectory: tileDir,
 	}, nil
 }
