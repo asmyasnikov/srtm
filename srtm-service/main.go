@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/asmyasnikov/srtm"
+	"github.com/gorilla/mux"
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
@@ -77,18 +78,18 @@ func main() {
 			return &geojson.Geometry{}
 		},
 	}
-	mux := http.NewServeMux()
+	router := mux.NewRouter()
 	if debug() {
-		mux.HandleFunc("/debug/pprof/", pprof.Index)
-		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		router.HandleFunc("/debug/pprof/", pprof.Index)
+		router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	}
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleAddElevations(w, r, data, pool)
-	})
-	handler := cors.Default().Handler(mux)
+	}).Methods(http.MethodPost)
+	handler := cors.Default().Handler(router)
 	if err := http.ListenAndServe(":"+strconv.Itoa(httpPort()), handler); err != nil {
 		log.Error().Caller().Err(err).Msg("")
 	}
