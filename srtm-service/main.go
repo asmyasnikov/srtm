@@ -78,9 +78,6 @@ func main() {
 		},
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		handleAddElevations(w, r, data, pool)
-	})
 	if debug() {
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
 		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -88,6 +85,9 @@ func main() {
 		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	}
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		handleAddElevations(w, r, data, pool)
+	})
 	handler := cors.Default().Handler(mux)
 	if err := http.ListenAndServe(":"+strconv.Itoa(httpPort()), handler); err != nil {
 		log.Error().Caller().Err(err).Msg("")
