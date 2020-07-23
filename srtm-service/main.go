@@ -81,6 +81,12 @@ func main() {
 	router := mux.NewRouter()
 	if debug() {
 		router.HandleFunc("/debug/pprof/", pprof.Index)
+		router.HandleFunc("/debug/pprof/allocs", pprof.Handler("allocs").ServeHTTP)
+		router.HandleFunc("/debug/pprof/heap", pprof.Handler("heap").ServeHTTP)
+		router.HandleFunc("/debug/pprof/block", pprof.Handler("block").ServeHTTP)
+		router.HandleFunc("/debug/pprof/goroutine", pprof.Handler("goroutine").ServeHTTP)
+		router.HandleFunc("/debug/pprof/mutex", pprof.Handler("mutex").ServeHTTP)
+		router.HandleFunc("/debug/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
 		router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 		router.HandleFunc("/debug/pprof/profile", pprof.Profile)
 		router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
@@ -89,8 +95,7 @@ func main() {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleAddElevations(w, r, data, pool)
 	}).Methods(http.MethodPost)
-	handler := cors.Default().Handler(router)
-	if err := http.ListenAndServe(":"+strconv.Itoa(httpPort()), handler); err != nil {
+	if err := http.ListenAndServe(":"+strconv.Itoa(httpPort()), cors.Default().Handler(router)); err != nil {
 		log.Error().Caller().Err(err).Msg("")
 	}
 }
