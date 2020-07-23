@@ -12,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 func tileDirectory() string {
@@ -71,9 +72,14 @@ func main() {
 		return
 	}
 	defer data.Destroy()
+	pool := &sync.Pool{
+		New: func() interface{} {
+			return &geojson.Geometry{}
+		},
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		handleAddElevations(w, r, data)
+		handleAddElevations(w, r, data, pool)
 	})
 	if debug() {
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
@@ -88,18 +94,19 @@ func main() {
 	}
 }
 
-func handleAddElevations(w http.ResponseWriter, r *http.Request, data *srtm.SRTM) {
+func handleAddElevations(w http.ResponseWriter, r *http.Request, data *srtm.SRTM, pool *sync.Pool) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var geoJson = geojson.Geometry{}
+	geoJson := pool.Get().(*geojson.Geometry)
+	defer pool.Put(geoJson)
 	if err := geoJson.UnmarshalJSON(body); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if err := data.AddElevations(&geoJson, true); err != nil {
+	if err := data.AddElevations(geoJson, true); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
