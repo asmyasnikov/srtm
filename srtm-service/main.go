@@ -36,6 +36,10 @@ func httpPort() int {
 	return p
 }
 
+func prefix() string {
+	return os.Getenv("PREFIX")
+}
+
 func lruCacheSize() int {
 	v := os.Getenv("LRU_CACHE_SIZE")
 	if len(v) == 0 {
@@ -78,7 +82,7 @@ func main() {
 			return &geojson.Geometry{}
 		},
 	}
-	router := mux.NewRouter()
+	router := mux.NewRouter().PathPrefix(prefix()).Subrouter()
 	if debug() {
 		router.HandleFunc("/debug/pprof/", pprof.Index)
 		router.HandleFunc("/debug/pprof/allocs", pprof.Handler("allocs").ServeHTTP)
