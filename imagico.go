@@ -14,6 +14,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -97,6 +98,7 @@ func moveHgt(sourcePath, destPath string) error {
 }
 
 func downloadByURL(tileDir, url string) (extracted []string) {
+	defer runtime.GC()
 	targetDir := path.Join(os.TempDir(), "srtm-" + strconv.Itoa(rand.Int()))
 	err := os.Mkdir(targetDir, 0755)
 	if err != nil {

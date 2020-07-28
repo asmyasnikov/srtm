@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/rs/zerolog/log"
+	"runtime"
 	"sync"
 	"time"
 	"unsafe"
@@ -33,6 +34,7 @@ func New(lruCacheSize int, tileDir string, expiration time.Duration) (*SRTM, err
 				log.Error().Caller().Err(err).Msg("")
 			}
 		}
+		runtime.GC()
 	})
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("")
