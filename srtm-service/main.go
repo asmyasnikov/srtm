@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -184,8 +185,18 @@ func main() {
 	}).Methods(http.MethodPost)
 	if debug().(bool) {
 		go func() {
+			var memory runtime.MemStats
 			for {
-				log.Debug().Caller().Str("cache size", humanize.Bytes(data.Size())).Msg("")
+				runtime.ReadMemStats(&memory)
+				log.
+					Debug().
+					Caller().
+					Str("cache size", humanize.Bytes(data.Size())).
+					Str("alloc", humanize.Bytes(memory.Alloc)).
+					Str("total alloc", humanize.Bytes(memory.TotalAlloc)).
+					Str("sys", humanize.Bytes(memory.Sys)).
+					Uint32("num", memory.NumGC).
+					Msg("")
 				time.Sleep(time.Second)
 			}
 		}()
