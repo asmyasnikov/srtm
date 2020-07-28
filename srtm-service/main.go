@@ -154,6 +154,9 @@ func main() {
 		log.Error().Caller().Err(err).Msg("")
 		return
 	}
+	if debug().(bool) && l > zerolog.DebugLevel {
+		l = zerolog.DebugLevel
+	}
 	zerolog.SetGlobalLevel(l)
 	data, err := srtm.New(lruCacheSize().(int), tileDirectory().(string), expiration().(time.Duration))
 	if err != nil {
