@@ -192,10 +192,9 @@ func main() {
 					Debug().
 					Caller().
 					Str("cache size", humanize.Bytes(data.Size())).
-					Str("alloc", humanize.Bytes(memory.Alloc)).
+					Str("stack", humanize.Bytes(memory.StackInuse)).
 					Str("heap", humanize.Bytes(memory.HeapAlloc)).
-					Str("heap", humanize.Bytes(memory.HeapAlloc)).
-					Str("total alloc", humanize.Bytes(memory.TotalAlloc)).
+					Str("total", humanize.Bytes(memory.StackInuse + memory.HeapAlloc)).
 					Str("sys", humanize.Bytes(memory.Sys)).
 					Uint32("num gc", memory.NumGC).
 					Msg("")
