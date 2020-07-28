@@ -195,7 +195,7 @@ func main() {
 					Str("alloc", humanize.Bytes(memory.Alloc)).
 					Str("total alloc", humanize.Bytes(memory.TotalAlloc)).
 					Str("sys", humanize.Bytes(memory.Sys)).
-					Uint32("num", memory.NumGC).
+					Uint32("num gc", memory.NumGC).
 					Msg("")
 				time.Sleep(time.Second)
 			}
