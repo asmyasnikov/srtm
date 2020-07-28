@@ -55,7 +55,7 @@ func (d *SRTM) loadTile(ll LatLng) (*Tile, error) {
 	d.mtx.Lock()
 	defer d.mtx.Unlock()
 	if sort.SearchStrings(d.bads, key) < len(d.bads) {
-		return nil, fmt.Errorf("tile for key '%s' marked as bad")
+		return nil, fmt.Errorf("tile for key '%s' marked as bad", key)
 	}
 	t, ok := d.cache.Get(key)
 	if ok {
