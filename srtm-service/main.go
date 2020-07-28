@@ -184,12 +184,6 @@ func main() {
 	}).Methods(http.MethodPost)
 	if debug().(bool) {
 		go func() {
-			p, err := data.AddElevation(
-				[]float64{
-					-65.23555,
-					-45.55457,
-				})
-			fmt.Println(p, err)
 			for {
 				log.Debug().Caller().Str("cache size", humanize.Bytes(data.Size())).Msg("")
 				time.Sleep(time.Second)
