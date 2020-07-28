@@ -3,6 +3,7 @@ package srtm
 import (
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/rs/zerolog/log"
+	"time"
 )
 
 // AddElevation returns point with 3 coordinates: [longitude, latitude, elevation]
@@ -18,6 +19,7 @@ func (d *SRTM) AddElevation(point []float64) ([]float64, error) {
 		log.Error().Caller().Err(err).Msgf("loadTile: latLng = %s -> error %s", ll.String(), err.Error())
 		return nil, err
 	}
+	tile.lru = time.Now()
 	elevation, err := tile.GetElevation(ll)
 	if err != nil {
 		log.Error().Caller().Err(err).Msgf("GetElevation: latLng = %s -> error %s", ll.String(), err.Error())

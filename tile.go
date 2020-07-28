@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 )
 
 func tileKey(ll LatLng) string {
@@ -35,7 +36,8 @@ var suffixes = []string{
 	".gz",
 }
 
-func tilePath(tileDir string, key string, ll LatLng) (string, os.FileInfo, error) {
+func tilePath(tileDir string, ll LatLng) (string, os.FileInfo, error) {
+	key := tileKey(ll)
 	tilePath := path.Join(tileDir, key)
 	for _, s := range suffixes {
 		tilePath = tilePath + s
@@ -44,7 +46,7 @@ func tilePath(tileDir string, key string, ll LatLng) (string, os.FileInfo, error
 			return tilePath, info, nil
 		}
 	}
-	return download(tileDir, key, ll)
+	return download(tileDir, ll)
 }
 
 func (d *SRTM) loadTile(ll LatLng) (*Tile, error) {
@@ -55,7 +57,7 @@ func (d *SRTM) loadTile(ll LatLng) (*Tile, error) {
 	if ok {
 		return t.(*Tile), nil
 	}
-	tPath, info, err := tilePath(d.tileDirectory, key, ll)
+	tPath, info, err := tilePath(d.tileDirectory, ll)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +73,7 @@ func (d *SRTM) loadTile(ll LatLng) (*Tile, error) {
 			elevations: elevations,
 		}
 		if evicted := d.cache.Add(key, t); evicted {
-			log.Error().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest", key)
+			log.Debug().Caller().Err(err).Msgf("add tile '%s' to cache with evict oldest", key)
 		}
 		log.Debug().Caller().Str("tile path", tPath).Msg("load tile to memory")
 		return t.(*Tile), nil
@@ -103,6 +105,7 @@ type Tile struct {
 	sw         *LatLng
 	size       int
 	elevations []int16
+	lru        time.Time
 }
 
 // GetElevation returns elevation for lat/lng

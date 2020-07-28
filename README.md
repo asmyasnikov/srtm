@@ -24,19 +24,21 @@ Support 1-arcsecond and 3-arcseconds hgt-tiles.
 
 Provide web-service as elevation-service (like [github.com/asmyasnikov/elevation-service](https://github.com/asmyasnikov/elevation-service)) with allow CORS requests, auto-download zipped hgt-tiles from [imagico service](http://www.imagico.de/), unzipp and persist hgt-tiles in user-defined tile directory.
 
-
 Environment variables:
  - `HTTP_PORT` - http port of web-service (default 80)
  - `TILE_DIRECTORY` - directory of hgt tiles (default `./data/`)
  - `LRU_CACHE_SIZE` - LRU cache size (default 1000)
  - `LOG_LEVEL` - logging level 
+ - `WWW` - prefix of handlers (default `""`)
+ - `DEBUG` - boolean flag for debug handlers with `pprof` (default `false`) 
+ - `EXTRACT` - boolean flag for auto extracting `hgt.gz` files (after extracting remove archive, default `false`)  
 
 Install and usage:
  - from sources 
 ```
 # go get github.com/asmyasnikov/srtm/srtm-service
 # mkdir data
-# HTTP_PORT=80 TILE_DIRECTORY=./data LRU_CACHE_SIZE=1000 STORE_IN_MEMORY=false srtm-service &
+# HTTP_PORT=80 TILE_DIRECTORY=./data LRU_CACHE_SIZE=1000 srtm-service &
 ```
  - from docker
 ```
@@ -53,7 +55,13 @@ import (
 )
 
 func main() {
-    point, err := srtm.AddElevation("./data/", []float64{
+	data, err := srtm.New(9, "./data/", false)
+	if err != nil {
+        log.Fatal(err)
+		return
+	}
+	defer data.Destroy()
+    point, err := data.AddElevation([]float64{
         8.399786506567509, // longitude
         47.3439995300119, // latitude
     })

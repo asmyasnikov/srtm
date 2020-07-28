@@ -17,7 +17,7 @@ func TestReadFile(t *testing.T) {
 	wd, _ := os.Getwd()
 	for _, key := range testKeys {
 		t.Run(key, func(t *testing.T) {
-			tFileName, info, err := tilePath(path.Join(wd, "testdata"), key, LatLng{-46, -66})
+			tFileName, info, err := tilePath(path.Join(wd, "testdata"), LatLng{-46, -66})
 			require.NoError(t, err)
 			require.NotNil(t, info)
 			_, _, _, err = ReadFile(tFileName)

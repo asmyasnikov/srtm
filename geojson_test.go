@@ -81,7 +81,7 @@ func init() {
 }
 
 func TestAddElevations_Point(t *testing.T) {
-	data, err := Init(1, "testdata")
+	data, err := New(1, "testdata", -1)
 	require.NoError(t, err)
 	defer data.Destroy()
 	point, err := geojson.UnmarshalGeometry([]byte(`{"type":"Point","coordinates":[-65.92054637662613,-45.02475838113942]}`))
@@ -97,7 +97,7 @@ func TestAddElevations_Point(t *testing.T) {
 }
 
 func TestAddElevations_LineString(t *testing.T) {
-	data, err := Init(1, "testdata")
+	data, err := New(1, "testdata", -1)
 	require.NoError(t, err)
 	defer data.Destroy()
 	lineString, err := geojson.UnmarshalGeometry([]byte(`{"type":"LineString","coordinates":[[-65.92054637662613,-45.02475838113942],[-65.92054637362613,-45.02475838114942],[-65.92053637662613,-45.02475835113942]]}`))
@@ -119,7 +119,7 @@ func TestAddElevations_LineString(t *testing.T) {
 }
 
 func TestAddElevations_LineString_Rand(t *testing.T) {
-	data, err := Init(1, "testdata")
+	data, err := New(1, "testdata", -1)
 	require.NoError(t, err)
 	defer data.Destroy()
 	require.NoError(t, data.AddElevations(lineString, false))

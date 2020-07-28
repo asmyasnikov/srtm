@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetElevation(t *testing.T) {
-	data, err := Init(1, "testdata")
+	data, err := New(1, "testdata", -1)
 	require.NoError(t, err)
 	defer data.Destroy()
 	tile, err := data.loadTile(

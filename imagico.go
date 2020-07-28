@@ -95,12 +95,21 @@ func moveHgt(sourcePath, destPath string) error {
 	return nil
 }
 
-func download(tileDir, key string, ll LatLng) (string, os.FileInfo, error) {
+func download(tileDir string, ll LatLng) (string, os.FileInfo, error) {
+	key := tileKey(ll)
 	urls, err := search(ll)
 	if err != nil {
 		return "", nil, err
 	}
 	extracted := make([]string, 0)
+	toRemove := make([]string, 0, len(urls))
+	defer func() {
+		for _, d := range toRemove {
+			if err := os.RemoveAll(d); err != nil {
+				log.Error().Caller().Err(err).Msg("")
+			}
+		}
+	}()
 	for i, url := range urls {
 		targetDir := path.Join(os.TempDir(), key+"-"+strconv.Itoa(i))
 		err = os.Mkdir(targetDir, 0755)
@@ -108,7 +117,7 @@ func download(tileDir, key string, ll LatLng) (string, os.FileInfo, error) {
 			log.Error().Caller().Err(err).Msg("")
 			continue
 		}
-		defer os.RemoveAll(targetDir)
+		toRemove = append(toRemove, targetDir)
 		response, err := http.Get(url)
 		if err != nil {
 			log.Error().Caller().Err(err).Msg("")
