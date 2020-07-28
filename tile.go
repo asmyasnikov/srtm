@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"time"
 )
@@ -53,12 +54,17 @@ func (d *SRTM) loadTile(ll LatLng) (*Tile, error) {
 	key := tileKey(ll)
 	d.mtx.Lock()
 	defer d.mtx.Unlock()
+	if sort.SearchStrings(d.bads, key) < len(d.bads) {
+		return nil, fmt.Errorf("tile for key '%s' marked as bad")
+	}
 	t, ok := d.cache.Get(key)
 	if ok {
 		return t.(*Tile), nil
 	}
 	tPath, info, err := tilePath(d.tileDirectory, ll)
 	if err != nil {
+		d.bads = append(d.bads, key)
+		sort.Strings(d.bads)
 		return nil, err
 	}
 	if strings.HasSuffix(tPath, ".gz") {

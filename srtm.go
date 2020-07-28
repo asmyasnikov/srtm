@@ -15,6 +15,7 @@ type SRTM struct {
 	mtx           sync.Mutex
 	tileDirectory string
 	done          chan (struct{})
+	bads          []string
 }
 
 // New make initialization of cache
@@ -42,6 +43,7 @@ func New(lruCacheSize int, tileDir string, expiration time.Duration) (*SRTM, err
 		mtx:           sync.Mutex{},
 		tileDirectory: tileDir,
 		done:          make(chan struct{}),
+		bads:          make([]string, 0),
 	}
 	if expiration > 0 {
 		go srtm.sanityCleanLoop(expiration)

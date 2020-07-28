@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"path"
@@ -95,6 +96,69 @@ func moveHgt(sourcePath, destPath string) error {
 	return nil
 }
 
+func downloadByURL(tileDir, url string) (extracted []string) {
+	targetDir := path.Join(os.TempDir(), "srtm-" + strconv.Itoa(rand.Int()))
+	err := os.Mkdir(targetDir, 0755)
+	if err != nil {
+		log.Error().Caller().Err(err).Msg("")
+		return extracted
+	}
+	defer os.RemoveAll(targetDir)
+	response, err := http.Get(url)
+	if err != nil {
+		log.Error().Caller().Err(err).Msg("")
+		return extracted
+	}
+	defer response.Body.Close()
+	b, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Error().Caller().Err(err).Msg("")
+		return extracted
+	}
+	zipReader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+	if err != nil {
+		log.Error().Caller().Err(err).Msg("")
+		return extracted
+	}
+	for _, file := range zipReader.File {
+		zippedFile, err := file.Open()
+		if err != nil {
+			log.Error().Caller().Err(err).Msg("unzip")
+		}
+		extractedFilePath := filepath.Join(
+			targetDir,
+			file.Name,
+		)
+		if file.FileInfo().IsDir() {
+			os.MkdirAll(extractedFilePath, file.Mode())
+		} else {
+			outputFile, err := os.OpenFile(
+				extractedFilePath,
+				os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+				file.Mode(),
+			)
+			if err != nil {
+				log.Error().Caller().Err(err).Msg("open file")
+			}
+			_, err = io.Copy(outputFile, zippedFile)
+			if err != nil {
+				log.Error().Caller().Err(err).Msg("copy")
+			}
+			outputFile.Close()
+			if err == nil {
+				_, file := path.Split(extractedFilePath)
+				hgt := path.Join(tileDir, file)
+				extracted = append(extracted, hgt)
+				if err := moveHgt(extractedFilePath, hgt); err != nil {
+					log.Error().Caller().Err(err).Msg("move")
+				}
+			}
+		}
+		zippedFile.Close()
+	}
+	return extracted
+}
+
 func download(tileDir string, ll LatLng) (string, os.FileInfo, error) {
 	key := tileKey(ll)
 	urls, err := search(ll)
@@ -102,74 +166,8 @@ func download(tileDir string, ll LatLng) (string, os.FileInfo, error) {
 		return "", nil, err
 	}
 	extracted := make([]string, 0)
-	toRemove := make([]string, 0, len(urls))
-	defer func() {
-		for _, d := range toRemove {
-			if err := os.RemoveAll(d); err != nil {
-				log.Error().Caller().Err(err).Msg("")
-			}
-		}
-	}()
-	for i, url := range urls {
-		targetDir := path.Join(os.TempDir(), key+"-"+strconv.Itoa(i))
-		err = os.Mkdir(targetDir, 0755)
-		if err != nil {
-			log.Error().Caller().Err(err).Msg("")
-			continue
-		}
-		toRemove = append(toRemove, targetDir)
-		response, err := http.Get(url)
-		if err != nil {
-			log.Error().Caller().Err(err).Msg("")
-			continue
-		}
-		defer response.Body.Close()
-		b, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			log.Error().Caller().Err(err).Msg("")
-			continue
-		}
-		zipReader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
-		if err != nil {
-			log.Error().Caller().Err(err).Msg("")
-			continue
-		}
-		for _, file := range zipReader.File {
-			zippedFile, err := file.Open()
-			if err != nil {
-				log.Error().Caller().Err(err).Msg("unzip")
-			}
-			extractedFilePath := filepath.Join(
-				targetDir,
-				file.Name,
-			)
-			if file.FileInfo().IsDir() {
-				os.MkdirAll(extractedFilePath, file.Mode())
-			} else {
-				outputFile, err := os.OpenFile(
-					extractedFilePath,
-					os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-					file.Mode(),
-				)
-				if err != nil {
-					log.Error().Caller().Err(err).Msg("open file")
-				}
-				_, err = io.Copy(outputFile, zippedFile)
-				if err != nil {
-					log.Error().Caller().Err(err).Msg("copy")
-				}
-				outputFile.Close()
-				if err == nil {
-					_, file := path.Split(extractedFilePath)
-					hgt := path.Join(tileDir, file)
-					extracted = append(extracted, hgt)
-					if err := moveHgt(extractedFilePath, hgt); err != nil {
-						log.Error().Caller().Err(err).Msg("move")
-					}
-				}
-			}
-			zippedFile.Close()
-		}
+	for _, url := range urls {
+		extracted = append(extracted, downloadByURL(tileDir, url)...)
 	}
 	for _, hgt := range extracted {
 		if strings.Contains(hgt, key) {
