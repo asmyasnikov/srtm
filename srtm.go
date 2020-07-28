@@ -101,6 +101,7 @@ func (d *SRTM) sanityCleanLoop(expiration time.Duration) {
 func (d *SRTM) sanityClean(expiration time.Duration) {
 	d.mtx.Lock()
 	defer d.mtx.Unlock()
+	needGC := false
 	for _, key := range d.cache.Keys() {
 		value, ok := d.cache.Get(key)
 		if !ok {
@@ -112,6 +113,10 @@ func (d *SRTM) sanityClean(expiration time.Duration) {
 		}
 		if time.Since(tile.lru) > expiration {
 			d.cache.Remove(key)
+			needGC = true
 		}
+	}
+	if needGC {
+		runtime.GC()
 	}
 }
