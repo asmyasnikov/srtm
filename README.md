@@ -12,8 +12,8 @@ Compare testing results (tested on Intel Core i3-7100, 8GB memory, SSD, elevatio
 
 |                                                      | Memory usage at start, MB | Memory usage active phase, MB | docker slimmed image, MB | rps (siege trans/sec) |
 |------------------------------------------------------|---------------------------|-------------------------------|--------------------------|-----------------------|
-| node.js [elevation-service](https://github.com/asmyasnikov/elevation-service) | 40.44 | 77.41 | 161 | 837.61 |
-| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) | 1.996 | 15.9 | 13.5 | 3338.93 |
+| node.js [elevation-service](https://github.com/asmyasnikov/elevation-service) | 40.44 | 73.96 | 161 | 834.00 |
+| golang [srtm-service](github.com/asmyasnikov/srtm/srtm-service/) | 2.196 | 22.69 | 13.5 | 3008.51 |
 
 Siege run from command
 ```
@@ -52,10 +52,11 @@ package main
 import (
 	"github.com/asmyasnikov/srtm"
 	"log"
+    "time"
 )
 
 func main() {
-	data, err := srtm.New(9, "./data/", false)
+	data, err := srtm.New(9, "./data/", time.Minute)
 	if err != nil {
         log.Fatal(err)
 		return
