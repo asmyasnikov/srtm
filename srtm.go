@@ -111,7 +111,7 @@ func (d *SRTM) sanityClean(expiration time.Duration) {
 		if !ok {
 			continue
 		}
-		if time.Since(tile.lru) > expiration {
+		if time.Since(tile.LRU()) > expiration {
 			d.cache.Remove(key)
 			needGC = true
 		}

@@ -2,9 +2,11 @@ package srtm
 
 import (
 	geojson "github.com/paulmach/go.geojson"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 	"math"
 	"math/rand"
+	"runtime"
 	"testing"
 )
 
@@ -76,8 +78,73 @@ func init() {
 		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
 		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
 		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
+		{-67.0 + rand.Float64(), -46.0 + rand.Float64()},
 	}
 	lineString = geojson.NewLineStringGeometry(coordinates)
+	zerolog.SetGlobalLevel(zerolog.NoLevel)
 }
 
 func TestAddElevations_Point(t *testing.T) {
@@ -123,4 +190,46 @@ func TestAddElevations_LineString_Rand(t *testing.T) {
 	require.NoError(t, err)
 	defer data.Destroy()
 	require.NoError(t, data.AddElevations(lineString, false))
+}
+
+func Benchmark_process2_1(b *testing.B) {
+	data, err := New(1, "testdata", -1)
+	require.NoError(b, err)
+	defer data.Destroy()
+	data.process2(lineString.LineString, 1)
+}
+
+func Benchmark_process2_4(b *testing.B) {
+	data, err := New(1, "testdata", -1)
+	require.NoError(b, err)
+	defer data.Destroy()
+	data.process2(lineString.LineString, 4)
+}
+
+func Benchmark_process2_8(b *testing.B) {
+	data, err := New(1, "testdata", -1)
+	require.NoError(b, err)
+	defer data.Destroy()
+	data.process2(lineString.LineString, 8)
+}
+
+func Benchmark_process2_16(b *testing.B) {
+	data, err := New(1, "testdata", -1)
+	require.NoError(b, err)
+	defer data.Destroy()
+	data.process2(lineString.LineString, 16)
+}
+
+func Benchmark_process2_32(b *testing.B) {
+	data, err := New(1, "testdata", -1)
+	require.NoError(b, err)
+	defer data.Destroy()
+	data.process2(lineString.LineString, 32)
+}
+
+func Benchmark_process2_NCPU(b *testing.B) {
+	data, err := New(1, "testdata", -1)
+	require.NoError(b, err)
+	defer data.Destroy()
+	data.process2(lineString.LineString, runtime.NumCPU())
 }

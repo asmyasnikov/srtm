@@ -9,6 +9,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -107,11 +108,20 @@ func (d *SRTM) loadTile(ll LatLng) (*Tile, error) {
 
 // Tile struct contains hgt-tile meta-data and raw elevations slice
 type Tile struct {
-	f          *os.File
-	sw         *LatLng
-	size       int
-	elevations []int16
-	lru        time.Time
+	f            *os.File
+	sw           *LatLng
+	size         int
+	elevations   []int16
+	internalLRU int64
+}
+
+func (t *Tile) setLRU(lru time.Time) {
+	atomic.StoreInt64(&t.internalLRU, lru.UnixNano())
+}
+
+func (t *Tile) LRU() time.Time{
+	u := atomic.LoadInt64(&t.internalLRU)
+	return time.Unix(u/1e9, u%1e9)
 }
 
 // GetElevation returns elevation for lat/lng

@@ -3,6 +3,8 @@ package srtm
 import (
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/rs/zerolog/log"
+	"runtime"
+	"sync"
 	"time"
 )
 
@@ -19,7 +21,7 @@ func (d *SRTM) AddElevation(point []float64) ([]float64, error) {
 		log.Error().Caller().Err(err).Msgf("loadTile: latLng = %s -> error %s", ll.String(), err.Error())
 		return nil, err
 	}
-	tile.lru = time.Now()
+	tile.setLRU(time.Now())
 	elevation, err := tile.GetElevation(ll)
 	if err != nil {
 		log.Error().Caller().Err(err).Msgf("GetElevation: latLng = %s -> error %s", ll.String(), err.Error())
@@ -42,46 +44,77 @@ func (d *SRTM) AddElevations(geoJson *geojson.Geometry, skipErrors bool) error {
 		geoJson.Point = point
 		return nil
 	case geojson.GeometryLineString:
-		for i := range geoJson.LineString {
-			point, err := d.AddElevation(geoJson.LineString[i])
-			if err != nil && !skipErrors {
-				log.Error().Caller().Err(err).Msg("")
-			}
-			geoJson.LineString[i] = point
-		}
+		d.process2(geoJson.LineString, runtime.NumCPU())
 		return nil
 	case geojson.GeometryMultiPoint:
-		for i := range geoJson.MultiPoint {
-			point, err := d.AddElevation(geoJson.MultiPoint[i])
-			if err != nil && !skipErrors {
-				log.Error().Caller().Err(err).Msg("")
-			}
-			geoJson.MultiPoint[i] = point
-		}
+		d.process2(geoJson.MultiPoint, runtime.NumCPU())
 		return nil
 	case geojson.GeometryPolygon:
-		for i := range geoJson.Polygon {
-			for j := range geoJson.Polygon[i] {
-				point, err := d.AddElevation(geoJson.Polygon[i][j])
-				if err != nil && !skipErrors {
-					log.Error().Caller().Err(err).Msg("")
-				}
-				geoJson.Polygon[i][j] = point
-			}
-		}
+		d.process3(geoJson.Polygon, runtime.NumCPU())
 		return nil
 	case geojson.GeometryMultiLineString:
-		for i := range geoJson.MultiLineString {
-			for j := range geoJson.MultiLineString[i] {
-				point, err := d.AddElevation(geoJson.MultiLineString[i][j])
-				if err != nil && !skipErrors {
-					log.Error().Caller().Err(err).Msg("")
-				}
-				geoJson.MultiLineString[i][j] = point
-			}
-		}
+		d.process3(geoJson.MultiLineString, runtime.NumCPU())
 		return nil
 	default:
 		return nil
 	}
 }
+
+func (d *SRTM) process3(slice [][][]float64, n int) {
+	wg := sync.WaitGroup{}
+	wg.Add(n+1)
+	type p struct {
+		i int
+		j int
+	}
+	ch := make(chan p, n)
+	go func() {
+		for i := range slice {
+			for j := range slice[i] {
+				ch <- p{i, j}
+			}
+		}
+		close(ch)
+		wg.Done()
+	}()
+	for i := 0; i < n; i++ {
+		go func() {
+			for p := range ch {
+				point, err := d.AddElevation(slice[p.i][p.j])
+				if err != nil {
+					log.Error().Caller().Err(err).Msg("")
+				}
+				slice[p.i][p.j] = point
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
+func (d *SRTM) process2(slice [][]float64, n int) {
+	wg := sync.WaitGroup{}
+	wg.Add(n+1)
+	ch := make(chan int, n)
+	go func() {
+		for i := range slice {
+			ch <- i
+		}
+		close(ch)
+		wg.Done()
+	}()
+	for i := 0; i < n; i++ {
+		go func() {
+			for i := range ch {
+				point, err := d.AddElevation(slice[i])
+				if err != nil {
+					log.Error().Caller().Err(err).Msg("")
+				}
+				slice[i] = point
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
